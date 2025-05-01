@@ -3,8 +3,8 @@ import cors from 'cors';
 import { config } from './config';
 import { authRouter } from './routes/auth';
 import { productsRouter } from './routes/products';
-import { ordersRouter } from './routes/orders';
 import { errorHandler } from './middleware/errorHandler';
+import { ordersRouter } from './routes/orders';
 
 const app = express();
 

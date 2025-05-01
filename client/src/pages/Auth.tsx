@@ -2,47 +2,52 @@ import { Box, VStack, Heading, Text, FormControl, FormLabel, Input, Button, Sele
 import { FaUser, FaLock, FaUserTag, FaUserPlus } from 'react-icons/fa';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { mockAuth } from '../services/mockFirebase';
+import { login, signUp } from '../services/auth';
+import { useAuth } from '../hooks/useAuthHook';
 
-export const Auth = () => {
+export default function Auth() {
   const toast = useToast();
   const navigate = useNavigate();
-  const { mode } = useParams();
+  const { mode } = useParams<{ mode: string }>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState<'customer' | 'vendor' | 'b2b-customer'>('customer');
-  const [isLoading, setIsLoading] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+  const { setUser, setIsLoading, isLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Password validation for signup
-    if (mode === 'signup' && password !== confirmPassword) {
-      setPasswordError('Passwords do not match');
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      await mockAuth.login(email);
-      mockAuth.updateRole(role);
+      let response;
+      if (mode === 'signup') {
+        response = await signUp(email, password, role);
+        toast({
+          title: 'Success',
+          description: 'Account created successfully',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        response = await login(email, password);
+        toast({
+          title: 'Success',
+          description: 'Logged in successfully',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+        navigate('/');
+        setUser(response.user);
+      }
+    } catch (error: any) {
       toast({
-        title: "Success",
-        description: mode === 'login' ? "Logged in successfully" : "Account created successfully",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-      navigate('/');
-    } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to " + (mode === 'login' ? "login" : "create account"),
-        status: "error",
+        title: 'Error',
+        description: error.message,
+        status: 'error',
         duration: 3000,
         isClosable: true,
       });

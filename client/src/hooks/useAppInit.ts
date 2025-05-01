@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { mockFirestore } from '../services/mockFirebase';
 
 export const useAppInit = () => {
+  const [initialized, setInitialized] = useState(false);
+
   useEffect(() => {
-    // Initialize mock data
     const initializeMockData = async () => {
       try {
         // Load initial products
@@ -29,28 +30,13 @@ export const useAppInit = () => {
             {
               sku: "8906036670014",
               name: "Blue milk",
-              description: "Blueberry flavored milk",
+              description: "Fresh blue flavored milk",
               category: "dairy",
-              price: 24.0,
+              price: 27.0,
               stock: 0,
               imageUrl: "",
-              mrpPerQuantity: 24.0,
-              sellingPerQuantity: 24.0,
-              paidCostPerQuantity: 0,
-              allowLoose: false,
-              minQuantity: 1,
-              createdAt: new Date().toISOString()
-            },
-            {
-              sku: "8906036674739",
-              name: "Green milk 200",
-              description: "Green tea flavored milk",
-              category: "dairy",
-              price: 13.0,
-              stock: 0,
-              imageUrl: "",
-              mrpPerQuantity: 13.0,
-              sellingPerQuantity: 13.0,
+              mrpPerQuantity: 27.0,
+              sellingPerQuantity: 27.0,
               paidCostPerQuantity: 0,
               allowLoose: false,
               minQuantity: 1,
@@ -63,6 +49,37 @@ export const useAppInit = () => {
             await mockFirestore.products.add(product);
           }
         }
+
+        // Load initial orders
+        const orders = await mockFirestore.orders.get();
+        if (!orders.length) {
+          // If no orders exist, initialize with mock data
+          const mockOrders = [
+            {
+              customerId: "1",
+              customerName: "Test Customer",
+              customerEmail: "test@example.com",
+              products: [
+                {
+                  sku: "8906036670090",
+                  name: "Orange milk",
+                  quantity: 2,
+                  price: 27.0
+                }
+              ],
+              total: 54.0,
+              status: "pending",
+              createdAt: new Date().toISOString()
+            }
+          ];
+
+          // Add mock orders
+          for (const order of mockOrders) {
+            await mockFirestore.orders.add(order);
+          }
+        }
+
+        setInitialized(true);
       } catch (error) {
         console.error('Error initializing mock data:', error);
       }
@@ -70,4 +87,6 @@ export const useAppInit = () => {
 
     initializeMockData();
   }, []);
+
+  return { initialized };
 };

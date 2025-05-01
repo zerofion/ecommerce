@@ -1,17 +1,22 @@
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ChakraProvider, extendTheme, Box, Flex, Container, useColorModeValue } from '@chakra-ui/react';
+import { ChakraProvider, extendTheme, Box, Flex, useColorModeValue, useDisclosure, Spinner, Text } from '@chakra-ui/react';
 import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
 import { Home } from './pages/Home';
 import { Products } from './pages/Products';
 import { Orders } from './pages/Orders';
-import { Auth } from './pages/Auth';
-import { mockAuth } from './services/mockFirebase';
-import { useDisclosure } from '@chakra-ui/react';
-import { useAppInit } from './hooks/useAppInit';
-import { useState } from 'react';
+import Auth from './pages/Auth';
+import { useAuth } from './hooks/useAuthHook';
 
 const theme = extendTheme({
+  styles: {
+    global: {
+      'html, body': {
+        bg: 'gray.50',
+      },
+    },
+  },
   colors: {
     brand: {
       50: '#f7fafc',
@@ -56,10 +61,24 @@ const theme = extendTheme({
   },
   components: {
     Button: {
-      defaultProps: {
-        colorScheme: 'primary',
+      baseStyle: {
+        fontWeight: 'bold',
       },
       variants: {
+        solid: {
+          bg: 'brand.500',
+          color: 'white',
+          _hover: {
+            bg: 'brand.600',
+          },
+        },
+        outline: {
+          borderColor: 'brand.500',
+          color: 'brand.500',
+          _hover: {
+            bg: 'brand.50',
+          },
+        },
         ghost: {
           bg: 'transparent',
           color: 'primary.500',
@@ -70,91 +89,134 @@ const theme = extendTheme({
       },
     },
   },
-  styles: {
-    global: {
-      body: {
-        bg: 'gray.50',
-        color: 'gray.900',
-        fontFamily: 'system-ui, sans-serif',
-      },
-    },
-  },
 });
 
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
-  if (!mockAuth.currentUser) {
-    return <Navigate to="/auth/login" replace />;
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <Box height="100vh" display="flex" alignItems="center" justifyContent="center">
+        <Spinner
+          thickness="4px"
+          speed="0.65s"
+          emptyColor="gray.200"
+          color="blue.500"
+          size="xl"
+        />
+      </Box>
+    );
   }
-  return children;
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
 };
 
-function App() {
-  const bg = useColorModeValue('gray.50', 'gray.900');
-  const { isOpen, onOpen, onClose } = useDisclosure();
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const { isOpen, onClose } = useDisclosure();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  
+
   const toggleSidebarCollapse = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
-  useAppInit();
+  return (
+    <Flex>
+      <Sidebar
+        isOpen={isOpen}
+        onClose={onClose}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={toggleSidebarCollapse}
+      />
+      <Box flex="1" ml={{ base: 0, md: isSidebarCollapsed ? '64px' : '250px' }} p={4}>
+        {children}
+      </Box>
+    </Flex>
+  );
+};
+
+const App: React.FC = () => {
+  const bg = useColorModeValue('gray.50', 'gray.900');
+  const { user, isLoading } = useAuth();
+  const { onOpen } = useDisclosure();
+
+  if (isLoading) {
+    return (
+      <Box height="100vh" display="flex" alignItems="center" justifyContent="center">
+        {/* <Spinner
+          thickness="10px"
+          speed="0.65s"
+          emptyColor="gray.200"
+          color="blue.500"
+          size="xl"
+        /> */}
+        <Text>Loading...</Text>
+      </Box>
+    );
+  }
 
   return (
     <ChakraProvider theme={theme}>
       <Router>
+
         <Box bg={bg} minH="100vh">
-          {/* Header */}
-          <Header onToggle={onOpen} />
-          
+          {user && <Header onToggle={onOpen} />}
           <Box maxW="container.xl" mx="auto" p={4}>
             <Routes>
               <Route path="/auth/:mode" element={<Auth />} />
               <Route
                 path="/"
                 element={
+                  user ? (
+                    <Layout>
+                      <Home />
+                    </Layout>
+                  ) : (
+                    <Navigate to="/auth/login" replace />
+                  )
+                }
+              />
+              <Route
+                path="/products"
+                element={
                   <ProtectedRoute>
-                    <Flex>
-                      {/* Sidebar */}
-                      <Box
-                        as="nav"
-                        pos="fixed"
-                        top="0"
-                        left="0"
-                        zIndex={2}
-                        h="full"
-                        w="full"
-                        maxW={{ base: isOpen ? 'full' : '0', md: isSidebarCollapsed ? '64px' : '250px' }}
-                        bg="white"
-                        boxShadow="md"
-                        display={{ base: isOpen ? 'block' : 'none', md: 'block' }}
-                        transition="all 0.3s ease-in-out"
-                        transform={{ base: isOpen ? 'translateX(0)' : 'translateX(-100%)', md: 'translateX(0)' }}
-                      >
-                        <Sidebar 
-                          isOpen={isOpen} 
-                          onClose={onClose} 
-                          isCollapsed={isSidebarCollapsed} 
-                          onToggleCollapse={toggleSidebarCollapse} 
-                        />
-                      </Box>
-                      <Box flex={1} ml={{ base: 0, md: isSidebarCollapsed ? '64px' : '250px' }}>
-                        <Routes>
-                          <Route index element={<Home />} />
-                          <Route path="products" element={<Products />} />
-                          <Route path="orders" element={<Orders />} />
-                        </Routes>
-                      </Box>
-                    </Flex>
+                    <Layout>
+                      <Products />
+                    </Layout>
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/orders"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Orders />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/login" element={<Auth />} />
+              <Route path="/signup" element={<Auth />} />
               <Route path="*" element={<Navigate to="/auth/login" replace />} />
             </Routes>
           </Box>
         </Box>
+
       </Router>
     </ChakraProvider>
   );
-}
+};
 
 export default App;

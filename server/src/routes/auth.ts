@@ -1,111 +1,141 @@
 import express from 'express';
-import { auth } from '../services/firebase';
-import { User, Role } from '../services/firebase';
+import { auth, db } from '../services/firebase';
+
+interface UserProfile {
+  email: string;
+  role: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface LoginRequest {
+  idToken: string;
+}
+
+interface SignupRequest {
+  idToken: string;
+  user: {
+    email: string;
+    role: string;
+    name: string;
+  };
+}
 
 const router = express.Router();
 
 // Signup route
 router.post('/signup', async (req, res) => {
   try {
-    const { email, password, role = 'customer' as Role } = req.body;
+    const { idToken, user } = req.body as SignupRequest;
     
-    // Validate input
-    if (!email || !password || !role) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
+    // Verify ID token
+    const decodedToken = await auth.verifyIdToken(idToken);
+    const uid = decodedToken.uid;
 
-    // Create user in Firebase Auth
-    const userRecord = await auth.createUser({
-      email,
-      password,
-      disabled: false
+    // Get user record from Firebase Auth
+    const userRecord = await auth.getUser(uid);
+
+    // Create user profile in Firestore
+    await db.collection('users').doc(uid).set({
+      email: user.email,
+      role: user.role,
+      name: user.name,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     });
 
     // Set custom claims
-    await auth.setCustomUserClaims(userRecord.uid, {
-      role
+    await auth.setCustomUserClaims(uid, {
+      role: user.role
     });
 
+    // Generate custom token
+    const customToken = await auth.createCustomToken(uid);
+    
     res.status(201).json({
-      uid: userRecord.uid,
-      email: userRecord.email,
-      role
+      token: customToken,
+      user: {
+        id: uid,
+        email: user.email,
+        role: user.role,
+        name: user.name
+      }
     });
+
   } catch (error: any) {
     console.error('Signup error:', error);
     res.status(400).json({ error: error.message });
   }
 });
 
-// Login route
-router.post('/login', async (req, res) => {
+// Verify token route
+router.post('/verify', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { idToken } = req.body as LoginRequest;
     
-    // Validate input
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Missing email or password' });
+    // Verify ID token
+    const decodedToken = await auth.verifyIdToken(idToken);
+    const uid = decodedToken.uid;
+
+    // Get user profile from Firestore
+    const userDoc = await db.collection('users').doc(uid).get();
+    if (!userDoc.exists) {
+      return res.status(404).json({ error: 'User profile not found' });
     }
 
-    // Get user from Firebase Auth
-    const userRecord = await auth.getUserByEmail(email);
+    const userData = userDoc.data() as UserProfile;
     
-    // Generate custom token
-    const customToken = await auth.createCustomToken(userRecord.uid);
+    // Generate new custom token
+    const customToken = await auth.createCustomToken(uid);
     
     res.json({
       token: customToken,
       user: {
-        uid: userRecord.uid,
-        email: userRecord.email,
-        role: userRecord.customClaims?.role as Role
+        id: uid,
+        email: userData.email,
+        role: userData.role,
+        name: userData.name
       }
     });
+
   } catch (error: any) {
-    console.error('Login error:', error);
-    res.status(401).json({ error: 'Invalid credentials' });
+    console.error('Verify error:', error);
+    res.status(400).json({ error: error.message });
   }
 });
 
-// Verify token route
-router.post('/verify', async (req, res) => {
+// Get user profile route
+router.get('/user', async (req, res) => {
   try {
-    const { token } = req.body;
-    if (!token) {
-      return res.status(400).json({ error: 'Token is required' });
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: 'No token provided' });
     }
 
+    const token = authHeader.split(' ')[1];
     const decodedToken = await auth.verifyIdToken(token);
-    const userRecord = await auth.getUser(decodedToken.uid);
-    
-    res.json({
-      uid: userRecord.uid,
-      email: userRecord.email,
-      role: userRecord.customClaims?.role as Role
-    });
-  } catch (error: any) {
-    console.error('Token verification error:', error);
-    res.status(401).json({ error: 'Invalid token' });
-  }
-});
+    const uid = decodedToken.uid;
 
-// Get user profile
-router.get('/profile', async (req, res) => {
-  try {
-    const { uid } = req.query;
-    if (!uid) {
-      return res.status(400).json({ error: 'UID is required' });
+    // Get user profile from Firestore
+    const userDoc = await db.collection('users').doc(uid).get();
+    if (!userDoc.exists) {
+      return res.status(404).json({ error: 'User profile not found' });
     }
 
-    const userRecord = await auth.getUser(uid as string);
+    const userData = userDoc.data() as UserProfile;
     res.json({
-      uid: userRecord.uid,
-      email: userRecord.email,
-      role: userRecord.customClaims?.role as Role
+      user: {
+        id: uid,
+        email: userData.email,
+        role: userData.role,
+        name: userData.name
+      }
     });
+
   } catch (error: any) {
-    console.error('Get profile error:', error);
-    res.status(404).json({ error: 'User not found' });
+    console.error('User profile error:', error);
+    res.status(400).json({ error: error.message });
   }
 });
 

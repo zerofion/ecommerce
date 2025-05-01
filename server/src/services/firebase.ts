@@ -2,13 +2,17 @@ import admin from 'firebase-admin';
 import { config } from '../config';
 
 // Initialize Firebase Admin
-const app = admin.initializeApp({
-  credential: admin.credential.cert({
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY
-  })
-});
+let app: admin.app.App;
+
+try {
+  app = admin.initializeApp({
+    credential: admin.credential.cert(config.firebase.credential)
+  });
+  console.log('Firebase Admin initialized successfully');
+} catch (error) {
+  console.error('Failed to initialize Firebase Admin:', error);
+  throw error;
+}
 
 export const auth = admin.auth();
 export const db = admin.firestore();
@@ -62,13 +66,23 @@ export interface Order {
 
 // Helper functions
 export const getUserRole = async (uid: string): Promise<Role> => {
-  const user = await auth.getUser(uid);
-  return user.customClaims?.role as Role || 'customer';
+  try {
+    const user = await auth.getUser(uid);
+    return user.customClaims?.role as Role || 'customer';
+  } catch (error) {
+    console.error('Failed to get user role:', error);
+    throw error;
+  }
 };
 
 export const isUserAdmin = async (uid: string): Promise<boolean> => {
-  const role = await getUserRole(uid);
-  return role === 'admin';
+  try {
+    const role = await getUserRole(uid);
+    return role === 'admin';
+  } catch (error) {
+    console.error('Failed to check admin status:', error);
+    throw error;
+  }
 };
 
 // Export the app instance for token verification

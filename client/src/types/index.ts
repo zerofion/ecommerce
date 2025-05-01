@@ -37,7 +37,7 @@ export interface User {
   id: string;
   email: string;
   name?: string;
-  role?: 'customer' | 'admin';
+  role?: 'customer' | 'vendor' | 'b2b-customer';
 }
 
 export interface AuthState {

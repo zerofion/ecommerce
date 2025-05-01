@@ -6,34 +6,36 @@ import { getUserRole, isUserAdmin } from '../services/firebase';
 const router = express.Router();
 
 // Middleware to check user role
-const requireRole = async (req: express.Request, res: express.Response, next: express.NextFunction, requiredRole: string) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      return res.status(401).json({ error: 'No authorization token provided' });
+const requireRole = (requiredRole: string) => {
+  return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        return res.status(401).json({ error: 'No authorization token provided' });
+      }
+
+      const token = authHeader.split(' ')[1];
+      if (!token) {
+        return res.status(401).json({ error: 'Invalid authorization token' });
+      }
+
+      const decodedToken = await firebaseApp.auth().verifyIdToken(token);
+      const role = await getUserRole(decodedToken.uid);
+
+      if (role !== requiredRole) {
+        return res.status(403).json({ error: `Role ${requiredRole} required` });
+      }
+
+      next();
+    } catch (error) {
+      console.error('Role check error:', error);
+      res.status(401).json({ error: 'Invalid token' });
     }
-
-    const token = authHeader.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ error: 'Invalid authorization token' });
-    }
-
-    const decodedToken = await firebaseApp.auth().verifyIdToken(token);
-    const role = await getUserRole(decodedToken.uid);
-
-    if (role !== requiredRole) {
-      return res.status(403).json({ error: `Role ${requiredRole} required` });
-    }
-
-    next();
-  } catch (error) {
-    console.error('Role check error:', error);
-    res.status(401).json({ error: 'Invalid token' });
-  }
+  };
 };
 
 // Get all orders (admin only)
-router.get('/', requireRole.bind(null, 'admin'), async (req, res) => {
+router.get('/', requireRole('admin'), async (req, res) => {
   try {
     const snapshot = await db.collection('orders').get();
     const orders = snapshot.docs.map(doc => ({
@@ -48,7 +50,7 @@ router.get('/', requireRole.bind(null, 'admin'), async (req, res) => {
 });
 
 // Get user's orders (customer only)
-router.get('/user', requireRole.bind(null, 'customer'), async (req, res) => {
+router.get('/user', requireRole('customer'), async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -92,7 +94,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create order (customer only)
-router.post('/', requireRole.bind(null, 'customer'), async (req, res) => {
+router.post('/', requireRole('customer'), async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -122,7 +124,7 @@ router.post('/', requireRole.bind(null, 'customer'), async (req, res) => {
 });
 
 // Update order status (admin only)
-router.put('/:id/status', requireRole.bind(null, 'admin'), async (req, res) => {
+router.put('/:id/status', requireRole('admin'), async (req, res) => {
   try {
     const { status } = req.body;
     const docRef = db.collection('orders').doc(req.params.id);
@@ -143,7 +145,7 @@ router.put('/:id/status', requireRole.bind(null, 'admin'), async (req, res) => {
 });
 
 // Delete order (admin only)
-router.delete('/:id', requireRole.bind(null, 'admin'), async (req, res) => {
+router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     await db.collection('orders').doc(req.params.id).delete();
     res.status(204).send();
