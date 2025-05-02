@@ -36,6 +36,10 @@ router.post('/signup', async (req, res) => {
     // Get user record from Firebase Auth
     const userRecord = await auth.getUser(uid);
 
+    if(userRecord.email === user.email){
+      return res.status(409).json({ error: 'Email already exists' });
+    }
+
     // Create user profile in Firestore
     await db.collection('users').doc(uid).set({
       email: user.email,

@@ -1,20 +1,35 @@
-import { Box, VStack, Heading, Text, FormControl, FormLabel, Input, Button, Select, useToast, Link as ChakraLink, HStack, Text as ChakraText, InputLeftElement, InputGroup } from '@chakra-ui/react';
-import { FaUser, FaLock, FaUserTag, FaUserPlus } from 'react-icons/fa';
-import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { login, signUp } from '../services/auth';
+import { Box, VStack, Heading, Text, FormControl, FormLabel, Input, Button, Select, useToast, Link as ChakraLink, HStack, Text as ChakraText, InputLeftElement, InputGroup, Icon } from '@chakra-ui/react';
+import { FaUser, FaLock, FaUserTag, FaUserPlus, FaGoogle } from 'react-icons/fa';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { login, signUp, signInWithGoogle } from '../services/auth';
 import { useAuth } from '../hooks/useAuthHook';
 
 export default function Auth() {
   const toast = useToast();
   const navigate = useNavigate();
   const { mode } = useParams<{ mode: string }>();
+  const [searchParams] = useSearchParams();
+  const userAlreadyExists = searchParams.get('userAlreadyExists');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState<'customer' | 'vendor' | 'b2b-customer'>('customer');
   const [passwordError, setPasswordError] = useState('');
   const { setUser, setIsLoading, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (userAlreadyExists === 'true' && mode === 'signup') {
+      toast({
+        title: 'Error',
+        description: 'User already exists',
+        status: 'warning',
+        duration: 3000,
+        isClosable: true,
+        position: 'top-right'
+      });
+    }
+  }, [toast, userAlreadyExists]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,9 +55,68 @@ export default function Auth() {
           duration: 3000,
           isClosable: true,
         });
-        navigate('/');
         setUser(response.user);
       }
+      navigate('/');
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    try {
+      setIsLoading(true);
+      const response = await signInWithGoogle(role);
+      if (response.userAlreadyExists) {
+        setIsLoading(false);
+        navigate('/auth/login?userAlreadyExists=true');
+        return;
+      }
+      setUser(response.user);
+      toast({
+        title: 'Success',
+        description: 'Account created successfully',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      setIsLoading(false);
+      navigate('/');
+    } catch (error: any) {
+      console.error('Google Sign-Up Error:', error); // Add error logging
+      toast({
+        title: 'Error',
+        description: error.response?.data?.error?.message || 'Failed to create account with Google. Please try again.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+        position: 'top'
+      });
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setIsLoading(true);
+      const response = await signInWithGoogle(role);
+      setUser(response.user);
+      toast({
+        title: 'Success',
+        description: 'Logged in successfully',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      navigate('/');
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -101,18 +175,22 @@ export default function Auth() {
 
           <form onSubmit={handleSubmit}>
             <VStack spacing={6} align="stretch">
-              <FormControl isRequired>
-                <FormLabel>Role</FormLabel>
-                <Select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as 'customer' | 'vendor' | 'b2b-customer')}
-                  icon={<FaUserTag />}
-                >
-                  <option value="customer">Customer</option>
-                  <option value="vendor">Vendor</option>
-                  <option value="b2b-customer">B2B Customer</option>
-                </Select>
-              </FormControl>
+              {mode === 'signup' && (
+                <>
+                  <FormControl isRequired>
+                    <FormLabel>Role</FormLabel>
+                    <Select
+                      value={role}
+                      onChange={(e) => setRole(e.target.value as 'customer' | 'vendor' | 'b2b-customer')}
+                      icon={<FaUserTag />}
+                    >
+                      <option value="customer">Customer</option>
+                      <option value="vendor">Vendor</option>
+                      <option value="b2b-customer">B2B Customer</option>
+                    </Select>
+                  </FormControl>
+                </>
+              )}
 
               <FormControl isRequired>
                 <FormLabel>Email</FormLabel>
@@ -171,8 +249,20 @@ export default function Auth() {
                 colorScheme="blue"
                 isLoading={isLoading}
                 leftIcon={mode === 'login' ? <FaUser /> : <FaUserPlus />}
+                w="full"
+                mb={4}
               >
                 {mode === 'login' ? 'Login' : 'Sign Up'}
+              </Button>
+
+              <Button
+                onClick={mode === 'login' ? handleGoogleSignIn : handleGoogleSignUp}
+                colorScheme="gray"
+                leftIcon={<Icon as={FaGoogle} />}
+                w="full"
+                mb={4}
+              >
+                {mode === 'login' ? 'Login with Google' : 'Sign Up with Google'}
               </Button>
 
               <HStack justify="center">
