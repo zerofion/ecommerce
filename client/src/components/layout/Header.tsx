@@ -1,12 +1,39 @@
-import { Box, Flex, Heading, IconButton, Container, Link } from '@chakra-ui/react';
+import { Box, Flex, Heading, IconButton, Container, Link, Button, useToast } from '@chakra-ui/react';
 import { HamburgerIcon } from '@chakra-ui/icons';
 import { Link as RouterLink } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuthHook';
+import { logout } from '../../services/auth';
 
 interface HeaderProps {
   onToggle: () => void;
 }
 
 export const Header = ({ onToggle }: HeaderProps) => {
+  const { user, setUser } = useAuth();
+  const toast = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setUser(null);
+      toast({
+        title: 'Success',
+        description: 'Logged out successfully',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to logout',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
   return (
     <Box
       bg="white"
@@ -34,6 +61,16 @@ export const Header = ({ onToggle }: HeaderProps) => {
               Product Order App
             </Link>
           </Heading>
+          {user && (
+            <Button
+              colorScheme="red"
+              size="sm"
+              ml={4}
+              onClick={handleLogout}
+            >
+              Logout
+            </Button>
+          )}
         </Flex>
       </Container>
     </Box>

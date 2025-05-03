@@ -16,7 +16,7 @@ export default function Auth() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState<'customer' | 'vendor' | 'b2b-customer'>('customer');
   const [passwordError, setPasswordError] = useState('');
-  const { setUser, setIsLoading, isLoading } = useAuth();
+  const { setUser, setIsLoading, isLoading, setAuthToken } = useAuth();
 
   useEffect(() => {
     if (userAlreadyExists === 'true' && mode === 'signup') {
@@ -56,6 +56,7 @@ export default function Auth() {
           isClosable: true,
         });
         setUser(response.user);
+        setAuthToken(response.token);
       }
       navigate('/');
     } catch (error: any) {
@@ -107,8 +108,9 @@ export default function Auth() {
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
-      const response = await signInWithGoogle(role);
+      const response = await signInWithGoogle();
       setUser(response.user);
+      setAuthToken(response.token);
       toast({
         title: 'Success',
         description: 'Logged in successfully',

@@ -1,3 +1,5 @@
+import { User } from "../context/types";
+
 export interface Product {
   id: string;
   sku: string;
@@ -31,13 +33,6 @@ export interface Order {
   status: 'pending' | 'delivered' | 'cancelled';
   createdAt: string;
   updatedAt?: string;
-}
-
-export interface User {
-  id: string;
-  email: string;
-  name?: string;
-  role?: 'customer' | 'vendor' | 'b2b-customer';
 }
 
 export interface AuthState {

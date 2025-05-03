@@ -28,7 +28,7 @@ const router = express.Router();
 router.post('/signup', async (req, res) => {
   try {
     const { idToken, user } = req.body as SignupRequest;
-    
+
     // Verify ID token
     const decodedToken = await auth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
@@ -36,7 +36,7 @@ router.post('/signup', async (req, res) => {
     // Get user record from Firebase Auth
     const userRecord = await auth.getUser(uid);
 
-    if(userRecord.email === user.email){
+    if (userRecord.email === user.email) {
       return res.status(409).json({ error: 'Email already exists' });
     }
 
@@ -55,12 +55,14 @@ router.post('/signup', async (req, res) => {
     });
 
     // Generate custom token
-    const customToken = await auth.createCustomToken(uid);
-    
+    const customToken = await auth.createCustomToken(uid, {
+      role: user.role,
+      id: uid
+    });
+
     res.status(201).json({
       token: customToken,
       user: {
-        id: uid,
         email: user.email,
         role: user.role,
         name: user.name
@@ -77,7 +79,7 @@ router.post('/signup', async (req, res) => {
 router.post('/verify', async (req, res) => {
   try {
     const { idToken } = req.body as LoginRequest;
-    
+
     // Verify ID token
     const decodedToken = await auth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
@@ -89,16 +91,17 @@ router.post('/verify', async (req, res) => {
     }
 
     const userData = userDoc.data() as UserProfile;
-    
+
     // Generate new custom token
-    const customToken = await auth.createCustomToken(uid);
-    
+    const customToken = await auth.createCustomToken(uid, {
+      id: uid,
+      role: userData.role,
+    });
+
     res.json({
       token: customToken,
       user: {
-        id: uid,
         email: userData.email,
-        role: userData.role,
         name: userData.name
       }
     });

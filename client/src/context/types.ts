@@ -1,5 +1,5 @@
 export interface User {
-  uid: string;
+  name?: string;
   email: string;
   role: 'customer' | 'vendor' | 'b2b-customer';
 }
