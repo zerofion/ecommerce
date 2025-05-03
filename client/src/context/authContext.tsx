@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
 import { User } from './types';
 
 const firebaseConfig = {
@@ -26,7 +27,8 @@ export interface AuthContextType {
 }
 
 // Initialize Firebase
-initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
 
 export const AuthContext = createContext<AuthContextType>({
   auth: null,

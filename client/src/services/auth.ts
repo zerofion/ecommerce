@@ -1,26 +1,10 @@
 import axios from 'axios';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, getRedirectResult, UserCredential } from 'firebase/auth';
-import { FirebaseError, getApps, initializeApp } from 'firebase/app';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, UserCredential, sendEmailVerification } from 'firebase/auth';
 import { ClientRole, User } from '../context/types';
+import { UserRoleExistsError } from '../exceptions/UserRoleExists';
+import { auth } from '../context/authContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002';
-
-// Initialize Firebase
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
-};
-
-// Initialize Firebase if not already initialized
-if (!getApps().length) {
-  initializeApp(firebaseConfig);
-}
-
-const auth = getAuth();
 
 interface AuthResponse {
   token: string;
@@ -31,8 +15,16 @@ interface AuthResponse {
 export const signUp = async (email: string, password: string, role: ClientRole): Promise<AuthResponse> => {
   try {
     // 1. Create user in Firebase
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const firebaseUser = userCredential.user;
+    let userCredential: UserCredential;
+    try {
+      userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    } catch (error: any) {
+      if (error.code === 'auth/email-already-in-use') {
+        userCredential = await signInWithEmailAndPassword(auth, email, password);
+        console.log('Email already in use');
+      }
+    }
+    const firebaseUser = userCredential!.user;
 
     // 2. Get ID token
     const idToken = await firebaseUser.getIdToken();
@@ -47,6 +39,8 @@ export const signUp = async (email: string, password: string, role: ClientRole):
       }
     });
 
+    await sendEmailVerification(userCredential!.user);
+
     return {
       token: response.data.token,
       user: {
@@ -58,6 +52,9 @@ export const signUp = async (email: string, password: string, role: ClientRole):
       roleExists: '0'
     };
   } catch (error: any) {
+    if (error.response?.status === 409) {
+      throw new UserRoleExistsError();
+    }
     throw new Error(error.response?.data?.error?.message || 'Registration failed');
   }
 };
@@ -105,16 +102,7 @@ export const signUpWithGoogle = async (role?: ClientRole): Promise<AuthResponse>
   } catch (error: any) {
     // If signup fails because user exists, try to log in
     if (error.response?.status === 409) {
-
-      return {
-        token: '',
-        user: {
-          email,
-          role: role || 'customer'
-        },
-        userExists: '1',
-        roleExists: '1'
-      };
+      throw new UserRoleExistsError();
     }
     throw error;
   }
@@ -144,19 +132,25 @@ export const login = async (email: string, password: string, role: ClientRole): 
       roleExists: '1'
     };
   } catch (error: any) {
-    if (error.response?.status === 404) {
-      return handleUserNotFound();
-    }
-    if (error.response?.status === 403) {
-      return handleUserNotAuthorized();
-    }
-    if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-      return handleUserNotFound();
+    console.error('Login error:', error);
+    
+    // Handle specific Firebase error codes
+    if (error.code === 'auth/user-not-found') {
+      throw new Error('User not found. Please sign up first.');
     }
     if (error.code === 'auth/wrong-password') {
-      return handleUserNotAuthorized();
+      throw new Error('Incorrect password. Please try again.');
     }
-    throw new Error(error.response?.data?.error?.message || 'Authentication failed');
+    
+    // Handle API errors
+    if (error.response?.status === 404) {
+      throw new Error('User not found');
+    }
+    if (error.response?.status === 403) {
+      throw new Error('Unauthorized');
+    }
+    
+    throw error;
   }
 };
 
@@ -203,7 +197,7 @@ export const signInWithGoogle = async (role: ClientRole): Promise<AuthResponse> 
       return handleUserNotAuthorized();
     }
     console.error('Google Auth Error:', error);
-    throw new Error(error.message || 'Failed to authenticate with Google. Please try again.');
+    throw error;
   }
 };
 

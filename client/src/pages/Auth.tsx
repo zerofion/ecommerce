@@ -5,6 +5,10 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { login, signUp, signInWithGoogle, signUpWithGoogle } from '../services/auth';
 import { useAuth } from '../hooks/useAuthHook';
 import { ClientRole } from '../context/types';
+import { EmailNotVerifiedError } from '../exceptions/EmailNotVerifiedError';
+import { UserRoleExistsError } from '../exceptions/UserRoleExists';
+import { UserNotFoundError } from '../exceptions/UserNotFound';
+import { UserRoleNotFoundError } from '../exceptions/UserRoleNotFoundError';
 
 export default function Auth() {
   const toast = useToast();
@@ -14,6 +18,7 @@ export default function Auth() {
   const userExists = searchParams.get('ue');
   const userJustCreated = searchParams.get('ujc');
   const roleExists = searchParams.get('re');
+  const emailNotVerified = searchParams.get('env');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -22,16 +27,16 @@ export default function Auth() {
   const { setAuth, setIsLoading, isLoading } = useAuth();
 
   useEffect(() => {
-    if (userExists === '1' && mode === 'signup') {
-      toast({
-        title: 'Error',
-        description: 'User already exists',
-        status: 'warning',
-        duration: 3000,
-        isClosable: true,
-        position: 'top-right'
-      });
-    }
+    // if (userExists === '1' && mode === 'signup') {
+    //   toast({
+    //     title: 'Error',
+    //     description: 'User already exists',
+    //     status: 'warning',
+    //     duration: 3000,
+    //     isClosable: true,
+    //     position: 'top-right'
+    //   });
+    // }
 
     if (userExists === '0' && mode === 'signup') {
       toast({
@@ -42,6 +47,7 @@ export default function Auth() {
         isClosable: true,
         position: 'top-right'
       });
+      navigate('/auth/signup');
     }
 
     if (userJustCreated === '1' && mode === 'login') {
@@ -53,6 +59,7 @@ export default function Auth() {
         isClosable: true,
         position: 'top-right'
       });
+      navigate('/auth/login');
     }
 
     if (roleExists === '0' && mode === 'signup') {
@@ -64,64 +71,93 @@ export default function Auth() {
         isClosable: true,
         position: 'top-right'
       });
+      navigate('/auth/signup');
     }
-  }, [toast, userExists, mode, userJustCreated, roleExists]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      let response;
-      if (mode === 'signup') {
-        response = await signUp(email, password, role);
-        toast({
-          title: 'Success',
-          description: 'Account created successfully',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-          position: 'top-right'
-        });
-      } else {
-        response = await login(email, password, role);
-        if (response.userExists === '0') {
-          setIsLoading(false);
-          navigate('/auth/signup?ue=0');
-          return;
-        }
-        if (response.roleExists === '0') {
-          setIsLoading(false);
-          navigate('/auth/signup?re=0');
-          return;
-        }
-        toast({
-          title: 'Success',
-          description: 'Logged in successfully',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-          position: 'top-right'
-        });
-        setAuth({
-          user: response.user,
-          token: response.token
-        });
-      }
-      navigate('/');
-    } catch (error: any) {
+    if (emailNotVerified === '1' && mode === 'login') {
       toast({
         title: 'Error',
-        description: error.message,
+        description: 'Email not verified, Please verify your email first',
         status: 'error',
         duration: 3000,
         isClosable: true,
         position: 'top-right'
       });
+      navigate('/auth/login');
+    }
+
+    if (mode === 'login' && userExists === '1' && roleExists === '1') {
+      toast({
+        title: 'Warning',
+        description: 'User with this role already exists',
+        status: 'warning',
+        duration: 3000,
+        isClosable: true,
+        position: 'top-right'
+      });
+      navigate('/auth/login');
+    }
+  }, [toast, userExists, mode, userJustCreated, roleExists, emailNotVerified, navigate]);
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const response = await signUp(email, password, role);
+      toast({
+        title: 'Success',
+        description: 'Account created successfully',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+        position: 'top-right'
+      });
+      navigate('/auth/login?ujc=1');
+    } catch (error: any) {
+      console.error('Sign-Up Error:', error);
+      if (error instanceof UserRoleExistsError) {
+        navigate('/auth/login?ue=1&re=1');
+        return;
+      }
+      navigate('/auth/signup');
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleSignIn = async () => {
+    try {
+      const response = await login(email, password, role);
+      toast({
+        title: 'Success',
+        description: 'Logged in successfully',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+        position: 'top-right'
+      });
+      setAuth({
+        user: response.user,
+        token: response.token
+      });
+      navigate('/');
+    } catch (error: any) {
+      if (error instanceof EmailNotVerifiedError) {
+        navigate('/auth/login?env=1');
+        return;
+      }
+      if (error instanceof UserNotFoundError) {
+        navigate('/auth/signup?ue=0');
+        return;
+      }
+      if (error instanceof UserRoleNotFoundError) {
+        navigate('/auth/signup?re=0');
+        return;
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   const handleGoogleSignUp = async () => {
     try {
@@ -136,25 +172,13 @@ export default function Auth() {
         user: response.user,
         token: response.token
       });
-      toast({
-        title: 'Success',
-        description: 'Account created successfully',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-      setIsLoading(false);
       navigate('/auth/login?ujc=1');
     } catch (error: any) {
-      console.error('Google Sign-Up Error:', error); // Add error logging
-      toast({
-        title: 'Error',
-        description: error.response?.data?.error?.message || 'Failed to create account with Google. Please try again.',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-        position: 'top-right'
-      });
+      if (error instanceof UserRoleExistsError) {
+        navigate('/auth/login?ue=1&re=1');
+        return;
+      }
+    } finally {
       setIsLoading(false);
     }
   };
@@ -247,7 +271,7 @@ export default function Auth() {
             </Text>
           </Box>
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={mode === 'login' ? handleSignIn : handleSignUp}>
             <VStack spacing={6} align="stretch">
               (
               <>
