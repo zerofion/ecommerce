@@ -2,24 +2,27 @@ import { Box, VStack, Heading, Text, FormControl, FormLabel, Input, Button, Sele
 import { FaUser, FaLock, FaUserTag, FaUserPlus, FaGoogle } from 'react-icons/fa';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { login, signUp, signInWithGoogle } from '../services/auth';
+import { login, signUp, signInWithGoogle, signUpWithGoogle } from '../services/auth';
 import { useAuth } from '../hooks/useAuthHook';
+import { ClientRole } from '../context/types';
 
 export default function Auth() {
   const toast = useToast();
   const navigate = useNavigate();
   const { mode } = useParams<{ mode: string }>();
   const [searchParams] = useSearchParams();
-  const userAlreadyExists = searchParams.get('userAlreadyExists');
+  const userExists = searchParams.get('ue');
+  const userJustCreated = searchParams.get('ujc');
+  const roleExists = searchParams.get('re');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<'customer' | 'vendor' | 'b2b-customer'>('customer');
+  const [role, setRole] = useState<ClientRole>('customer');
   const [passwordError, setPasswordError] = useState('');
-  const { setUser, setIsLoading, isLoading, setAuthToken } = useAuth();
+  const { setAuth, setIsLoading, isLoading } = useAuth();
 
   useEffect(() => {
-    if (userAlreadyExists === 'true' && mode === 'signup') {
+    if (userExists === '1' && mode === 'signup') {
       toast({
         title: 'Error',
         description: 'User already exists',
@@ -29,7 +32,40 @@ export default function Auth() {
         position: 'top-right'
       });
     }
-  }, [toast, userAlreadyExists]);
+
+    if (userExists === '0' && mode === 'signup') {
+      toast({
+        title: 'Error',
+        description: 'User not found, Please sign up first',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+        position: 'top-right'
+      });
+    }
+
+    if (userJustCreated === '1' && mode === 'login') {
+      toast({
+        title: 'Success',
+        description: 'Account created successfully',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+        position: 'top-right'
+      });
+    }
+
+    if (roleExists === '0' && mode === 'signup') {
+      toast({
+        title: 'Error',
+        description: 'Role not found, Please sign up with a valid role first',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+        position: 'top-right'
+      });
+    }
+  }, [toast, userExists, mode, userJustCreated, roleExists]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,18 +81,32 @@ export default function Auth() {
           status: 'success',
           duration: 3000,
           isClosable: true,
+          position: 'top-right'
         });
       } else {
-        response = await login(email, password);
+        response = await login(email, password, role);
+        if (response.userExists === '0') {
+          setIsLoading(false);
+          navigate('/auth/signup?ue=0');
+          return;
+        }
+        if (response.roleExists === '0') {
+          setIsLoading(false);
+          navigate('/auth/signup?re=0');
+          return;
+        }
         toast({
           title: 'Success',
           description: 'Logged in successfully',
           status: 'success',
           duration: 3000,
           isClosable: true,
+          position: 'top-right'
         });
-        setUser(response.user);
-        setAuthToken(response.token);
+        setAuth({
+          user: response.user,
+          token: response.token
+        });
       }
       navigate('/');
     } catch (error: any) {
@@ -66,6 +116,7 @@ export default function Auth() {
         status: 'error',
         duration: 3000,
         isClosable: true,
+        position: 'top-right'
       });
     } finally {
       setIsLoading(false);
@@ -75,13 +126,16 @@ export default function Auth() {
   const handleGoogleSignUp = async () => {
     try {
       setIsLoading(true);
-      const response = await signInWithGoogle(role);
-      if (response.userAlreadyExists) {
+      const response = await signUpWithGoogle(role);
+      if (response.userExists === '1') {
         setIsLoading(false);
-        navigate('/auth/login?userAlreadyExists=true');
+        navigate('/auth/login?ue=1');
         return;
       }
-      setUser(response.user);
+      setAuth({
+        user: response.user,
+        token: response.token
+      });
       toast({
         title: 'Success',
         description: 'Account created successfully',
@@ -90,7 +144,7 @@ export default function Auth() {
         isClosable: true,
       });
       setIsLoading(false);
-      navigate('/');
+      navigate('/auth/login?ujc=1');
     } catch (error: any) {
       console.error('Google Sign-Up Error:', error); // Add error logging
       toast({
@@ -99,7 +153,7 @@ export default function Auth() {
         status: 'error',
         duration: 3000,
         isClosable: true,
-        position: 'top'
+        position: 'top-right'
       });
       setIsLoading(false);
     }
@@ -108,24 +162,42 @@ export default function Auth() {
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
-      const response = await signInWithGoogle();
-      setUser(response.user);
-      setAuthToken(response.token);
+      const response = await signInWithGoogle(role);
+      if (response.userExists === '0') {
+        setIsLoading(false);
+        navigate('/auth/signup?ue=0');
+        return;
+      }
+      if (response.roleExists === '0') {
+        setIsLoading(false);
+        navigate('/auth/signup?re=0');
+        return;
+      }
+      setAuth({
+        user: response.user,
+        token: response.token
+      });
       toast({
         title: 'Success',
         description: 'Logged in successfully',
         status: 'success',
         duration: 3000,
         isClosable: true,
+        position: 'top-right'
       });
       navigate('/');
     } catch (error: any) {
+      if (error.response?.data?.error?.message === 'User already exists') {
+        navigate('/auth/login?ue=1');
+        return;
+      }
       toast({
         title: 'Error',
         description: error.message,
         status: 'error',
         duration: 3000,
         isClosable: true,
+        position: 'top-right'
       });
     } finally {
       setIsLoading(false);
@@ -177,22 +249,22 @@ export default function Auth() {
 
           <form onSubmit={handleSubmit}>
             <VStack spacing={6} align="stretch">
-              {mode === 'signup' && (
-                <>
-                  <FormControl isRequired>
-                    <FormLabel>Role</FormLabel>
-                    <Select
-                      value={role}
-                      onChange={(e) => setRole(e.target.value as 'customer' | 'vendor' | 'b2b-customer')}
-                      icon={<FaUserTag />}
-                    >
-                      <option value="customer">Customer</option>
-                      <option value="vendor">Vendor</option>
-                      <option value="b2b-customer">B2B Customer</option>
-                    </Select>
-                  </FormControl>
-                </>
-              )}
+              (
+              <>
+                <FormControl isRequired>
+                  <FormLabel>Role</FormLabel>
+                  <Select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value as ClientRole)}
+                    icon={<FaUserTag />}
+                  >
+                    <option value="customer">Customer</option>
+                    <option value="vendor">Vendor</option>
+                    <option value="b2b-customer">B2B Customer</option>
+                  </Select>
+                </FormControl>
+              </>
+              )
 
               <FormControl isRequired>
                 <FormLabel>Email</FormLabel>

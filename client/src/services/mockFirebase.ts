@@ -1,3 +1,4 @@
+import { ClientRole } from '../context/types';
 import { Product, Order } from '../types';
 
 // Mock data store
@@ -171,7 +172,7 @@ const mockData = {
 
 interface AuthUser {
   email: string;
-  role: 'customer' | 'vendor' | 'b2b-customer';
+  role: ClientRole;
 }
 
 // Mock authentication
@@ -196,7 +197,7 @@ export const mockAuth = {
   logout: () => {
     mockAuth.currentUser = null;
   },
-  updateRole: (role: 'customer' | 'vendor' | 'b2b-customer') => {
+  updateRole: (role: ClientRole) => {
     if (mockAuth.currentUser) {
       mockAuth.currentUser.role = role;
     }

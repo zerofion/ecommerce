@@ -1,7 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { getAuth } from 'firebase/auth';
 import { initializeApp } from 'firebase/app';
-import { User } from '../types';
+import { User } from './types';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -12,30 +11,30 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-export interface AuthContextType {
+export interface Auth {
   user: User | null;
-  authToken: string | null;
-  setAuthToken: React.Dispatch<React.SetStateAction<string | null>>;
+  token: string | null;
+}
+
+export interface AuthContextType {
+  auth: Auth | null;
+  setAuth: React.Dispatch<React.SetStateAction<Auth | null>>;
   isLoading: boolean;
-  setUser: React.Dispatch<React.SetStateAction<User | null>>;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
   error: string | null;
   setError: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+initializeApp(firebaseConfig);
 
 export const AuthContext = createContext<AuthContextType>({
-  user: null,
+  auth: null,
+  setAuth: () => { },
   isLoading: true,
-  setUser: () => { },
   setIsLoading: () => { },
   error: null,
   setError: () => { },
-  authToken: null,
-  setAuthToken: () => { },
 });
 
 interface AuthProviderProps {
@@ -46,28 +45,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const persistedAuth = sessionStorage.getItem('auth');
   const initialAuth = persistedAuth ? JSON.parse(persistedAuth) : null;
 
-  const [user, setUser] = useState<User | null>(initialAuth?.user || null);
-  const [authToken, setAuthToken] = useState<string | null>(initialAuth?.authToken || null);
+  const [auth, setAuth] = useState<Auth | null>(initialAuth || null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
 
   useEffect(() => {
-    if (user && authToken) {
+    if (auth) {
       sessionStorage.setItem('auth', JSON.stringify({
-        user,
-        authToken
+        user: auth.user,
+        token: auth.token
       }));
     } else {
       sessionStorage.removeItem('auth');
     }
-  }, [user, authToken]);
+  }, [auth]);
 
 
   return (
     <AuthContext.Provider value={{
-      user, authToken, setAuthToken,
-      isLoading, setUser, setIsLoading, error, setError
+      auth, setAuth,
+      isLoading, setIsLoading, error, setError
     }}>
       {children}
     </AuthContext.Provider>

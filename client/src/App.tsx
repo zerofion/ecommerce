@@ -148,7 +148,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
 const App: React.FC = () => {
   const bg = useColorModeValue('gray.50', 'gray.900');
-  const { user, isLoading } = useAuth();
+  const { auth, isLoading } = useAuth();
   const { onOpen } = useDisclosure();
 
   if (isLoading) {
@@ -171,14 +171,14 @@ const App: React.FC = () => {
       <Router>
 
         <Box bg={bg} minH="100vh">
-          {user && <Header onToggle={onOpen} />}
+          {auth && <Header onToggle={onOpen} />}
           <Box maxW="container.xl" mx="auto" p={4}>
             <Routes>
               <Route path="/auth/:mode" element={<Auth />} />
               <Route
                 path="/"
                 element={
-                  user ? (
+                  auth ? (
                     <Layout>
                       <Home />
                     </Layout>

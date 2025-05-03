@@ -1,5 +1,8 @@
+export type ClientRole = 'customer' | 'vendor' | 'b2b-customer';
+
+
 export interface User {
   name?: string;
   email: string;
-  role: 'customer' | 'vendor' | 'b2b-customer';
+  role: ClientRole;
 }

@@ -9,19 +9,20 @@ interface HeaderProps {
 }
 
 export const Header = ({ onToggle }: HeaderProps) => {
-  const { user, setUser } = useAuth();
+  const { auth, setAuth } = useAuth();
   const toast = useToast();
 
   const handleLogout = async () => {
     try {
       await logout();
-      setUser(null);
+      setAuth(null);
       toast({
         title: 'Success',
         description: 'Logged out successfully',
         status: 'success',
         duration: 3000,
         isClosable: true,
+        position: 'top-right'
       });
     } catch (error: any) {
       toast({
@@ -30,6 +31,7 @@ export const Header = ({ onToggle }: HeaderProps) => {
         status: 'error',
         duration: 3000,
         isClosable: true,
+        position: 'top-right'
       });
     }
   };
@@ -61,7 +63,7 @@ export const Header = ({ onToggle }: HeaderProps) => {
               Product Order App
             </Link>
           </Heading>
-          {user && (
+          {auth?.token && (
             <Button
               colorScheme="red"
               size="sm"
