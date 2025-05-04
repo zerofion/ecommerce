@@ -3,6 +3,9 @@ import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthP
 import { ClientRole, User } from '../context/types';
 import { UserRoleExistsError } from '../exceptions/UserRoleExists';
 import { auth } from '../context/authContext';
+import { UserNotFoundError } from '../exceptions/UserNotFound';
+import { UserRoleNotFoundError } from '../exceptions/UserRoleNotFoundError';
+import { EmailNotVerifiedError } from '../exceptions/EmailNotVerifiedError';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002';
 
@@ -13,11 +16,13 @@ interface AuthResponse {
   roleExists: '1' | '0';
 }
 export const signUp = async (email: string, password: string, role: ClientRole): Promise<AuthResponse> => {
+  let userJustCreated = false;
   try {
     // 1. Create user in Firebase
     let userCredential: UserCredential;
     try {
       userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      userJustCreated = true;
     } catch (error: any) {
       if (error.code === 'auth/email-already-in-use') {
         userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -39,7 +44,9 @@ export const signUp = async (email: string, password: string, role: ClientRole):
       }
     });
 
-    await sendEmailVerification(userCredential!.user);
+    if (userJustCreated) {
+      await sendEmailVerification(userCredential!.user);
+    }
 
     return {
       token: response.data.token,
@@ -54,6 +61,9 @@ export const signUp = async (email: string, password: string, role: ClientRole):
   } catch (error: any) {
     if (error.response?.status === 409) {
       throw new UserRoleExistsError();
+    }
+    if (error.response?.status === 404 || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+      throw new UserNotFoundError();
     }
     throw new Error(error.response?.data?.error?.message || 'Registration failed');
   }
@@ -116,6 +126,12 @@ export const login = async (email: string, password: string, role: ClientRole): 
 
     // 2. Get ID token from Firebase
     const idToken = await firebaseUser.getIdToken();
+    
+    const isEmailVerified = await firebaseUser.emailVerified;
+
+    if (!isEmailVerified) {
+      throw new EmailNotVerifiedError();
+    }
 
     // 3. Send ID token to server for verification and get custom claims
     const response = await axios.post<AuthResponse>(`${API_URL}/api/auth/verify`, { idToken, role });
@@ -132,24 +148,17 @@ export const login = async (email: string, password: string, role: ClientRole): 
       roleExists: '1'
     };
   } catch (error: any) {
-    console.error('Login error:', error);
-    
     // Handle specific Firebase error codes
-    if (error.code === 'auth/user-not-found') {
-      throw new Error('User not found. Please sign up first.');
-    }
     if (error.code === 'auth/wrong-password') {
       throw new Error('Incorrect password. Please try again.');
     }
-    
-    // Handle API errors
-    if (error.response?.status === 404) {
-      throw new Error('User not found');
+
+    if (error.response?.status === 404 || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+      throw new UserNotFoundError();
     }
     if (error.response?.status === 403) {
-      throw new Error('Unauthorized');
+      throw new UserRoleNotFoundError();
     }
-    
     throw error;
   }
 };
@@ -191,39 +200,15 @@ export const signInWithGoogle = async (role: ClientRole): Promise<AuthResponse> 
     };
   } catch (error: any) {
     if (error.response?.status === 404) {
-      return handleUserNotFound();
+      throw new UserNotFoundError();
     }
     if (error.response?.status === 403) {
-      return handleUserNotAuthorized();
+      throw new UserRoleNotFoundError();
     }
     console.error('Google Auth Error:', error);
     throw error;
   }
 };
-
-function handleUserNotFound(): AuthResponse {
-  return {
-    token: '',
-    user: {
-      email: '',
-      role: 'customer'
-    },
-    userExists: '0',
-    roleExists: '0'
-  };
-}
-
-function handleUserNotAuthorized(): AuthResponse {
-  return {
-    token: '',
-    user: {
-      email: '',
-      role: 'customer'
-    },
-    userExists: '1',
-    roleExists: '0'
-  };
-}
 
 export const logout = async () => {
   try {

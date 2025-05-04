@@ -9,13 +9,13 @@ interface HeaderProps {
 }
 
 export const Header = ({ onToggle }: HeaderProps) => {
-  const { auth, setAuth } = useAuth();
+  const { authSession, setAuthSession } = useAuth();
   const toast = useToast();
 
   const handleLogout = async () => {
     try {
       await logout();
-      setAuth(null);
+      setAuthSession(null);
       toast({
         title: 'Success',
         description: 'Logged out successfully',
@@ -63,7 +63,7 @@ export const Header = ({ onToggle }: HeaderProps) => {
               Product Order App
             </Link>
           </Heading>
-          {auth?.token && (
+          {authSession?.token && (
             <Button
               colorScheme="red"
               size="sm"

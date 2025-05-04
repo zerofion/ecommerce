@@ -24,19 +24,9 @@ export default function Auth() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState<ClientRole>('customer');
   const [passwordError, setPasswordError] = useState('');
-  const { setAuth, setIsLoading, isLoading } = useAuth();
+  const { setAuthSession, setIsLoading, isLoading } = useAuth();
 
   useEffect(() => {
-    // if (userExists === '1' && mode === 'signup') {
-    //   toast({
-    //     title: 'Error',
-    //     description: 'User already exists',
-    //     status: 'warning',
-    //     duration: 3000,
-    //     isClosable: true,
-    //     position: 'top-right'
-    //   });
-    // }
 
     if (userExists === '0' && mode === 'signup') {
       toast({
@@ -119,24 +109,22 @@ export default function Auth() {
         navigate('/auth/login?ue=1&re=1');
         return;
       }
+      if (error instanceof UserNotFoundError) {
+        navigate('/auth/signup?ue=0');
+        return;
+      }
       navigate('/auth/signup');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSignIn = async () => {
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
     try {
       const response = await login(email, password, role);
-      toast({
-        title: 'Success',
-        description: 'Logged in successfully',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-        position: 'top-right'
-      });
-      setAuth({
+      setAuthSession({
         user: response.user,
         token: response.token
       });
@@ -168,10 +156,6 @@ export default function Auth() {
         navigate('/auth/login?ue=1');
         return;
       }
-      setAuth({
-        user: response.user,
-        token: response.token
-      });
       navigate('/auth/login?ujc=1');
     } catch (error: any) {
       if (error instanceof UserRoleExistsError) {
@@ -187,42 +171,20 @@ export default function Auth() {
     try {
       setIsLoading(true);
       const response = await signInWithGoogle(role);
-      if (response.userExists === '0') {
-        setIsLoading(false);
-        navigate('/auth/signup?ue=0');
-        return;
-      }
-      if (response.roleExists === '0') {
-        setIsLoading(false);
-        navigate('/auth/signup?re=0');
-        return;
-      }
-      setAuth({
+      setAuthSession({
         user: response.user,
         token: response.token
       });
-      toast({
-        title: 'Success',
-        description: 'Logged in successfully',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-        position: 'top-right'
-      });
       navigate('/');
     } catch (error: any) {
-      if (error.response?.data?.error?.message === 'User already exists') {
-        navigate('/auth/login?ue=1');
+      if (error instanceof UserNotFoundError) {
+        navigate('/auth/signup?ue=0');
         return;
       }
-      toast({
-        title: 'Error',
-        description: error.message,
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-        position: 'top-right'
-      });
+      if (error instanceof UserRoleNotFoundError) {
+        navigate('/auth/signup?re=0');
+        return;
+      }
     } finally {
       setIsLoading(false);
     }
@@ -349,6 +311,7 @@ export default function Auth() {
                 leftIcon={mode === 'login' ? <FaUser /> : <FaUserPlus />}
                 w="full"
                 mb={4}
+                isDisabled= {mode === 'signup' && !!passwordError}
               >
                 {mode === 'login' ? 'Login' : 'Sign Up'}
               </Button>

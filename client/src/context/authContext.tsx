@@ -18,8 +18,8 @@ export interface Auth {
 }
 
 export interface AuthContextType {
-  auth: Auth | null;
-  setAuth: React.Dispatch<React.SetStateAction<Auth | null>>;
+  authSession: Auth | null;
+  setAuthSession: React.Dispatch<React.SetStateAction<Auth | null>>;
   isLoading: boolean;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
   error: string | null;
@@ -31,8 +31,8 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
 export const AuthContext = createContext<AuthContextType>({
-  auth: null,
-  setAuth: () => { },
+  authSession: null,
+  setAuthSession: () => { },
   isLoading: true,
   setIsLoading: () => { },
   error: null,
@@ -47,26 +47,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const persistedAuth = sessionStorage.getItem('auth');
   const initialAuth = persistedAuth ? JSON.parse(persistedAuth) : null;
 
-  const [auth, setAuth] = useState<Auth | null>(initialAuth || null);
+  const [authSession, setAuthSession] = useState<Auth | null>(initialAuth || null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
 
   useEffect(() => {
-    if (auth) {
+    if (authSession) {
       sessionStorage.setItem('auth', JSON.stringify({
-        user: auth.user,
-        token: auth.token
+        user: authSession.user,
+        token: authSession.token
       }));
     } else {
       sessionStorage.removeItem('auth');
     }
-  }, [auth]);
+  }, [authSession]);
 
 
   return (
     <AuthContext.Provider value={{
-      auth, setAuth,
+      authSession, setAuthSession,
       isLoading, setIsLoading, error, setError
     }}>
       {children}
