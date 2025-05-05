@@ -3,11 +3,14 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ChakraProvider, extendTheme, Box, Flex, useColorModeValue, useDisclosure, Spinner, Text } from '@chakra-ui/react';
 import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
-import { Home } from './pages/Home';
+
 import { Products } from './pages/Products';
 import { Orders } from './pages/Orders';
 import Auth from './pages/Auth';
 import { useAuth } from './hooks/useAuthHook';
+import { ClientRole } from './context/types';
+import { CustomerHome } from './pages/CustomerHome';
+import { VendorHome } from './pages/VendorHome';
 
 const theme = extendTheme({
   styles: {
@@ -181,7 +184,7 @@ const App: React.FC = () => {
                 element={
                   authSession ? (
                     <Layout>
-                      <Home />
+                      {authSession!.user!.role === ClientRole.CUSTOMER ? <CustomerHome /> : <VendorHome />}
                     </Layout>
                   ) : (
                     <Navigate to="/auth/login" replace />

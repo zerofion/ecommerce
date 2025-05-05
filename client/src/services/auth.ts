@@ -2,7 +2,7 @@ import axios from 'axios';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, UserCredential, sendEmailVerification } from 'firebase/auth';
 import { ClientRole, User } from '../context/types';
 import { UserRoleExistsError } from '../exceptions/UserRoleExists';
-import { auth } from '../context/authContext';
+import { Auth, auth } from '../context/authContext';
 import { UserNotFoundError } from '../exceptions/UserNotFound';
 import { UserRoleNotFoundError } from '../exceptions/UserRoleNotFoundError';
 import { EmailNotVerifiedError } from '../exceptions/EmailNotVerifiedError';

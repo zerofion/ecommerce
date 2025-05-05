@@ -1,7 +1,6 @@
-import { Box, Button, Flex, Heading, Container, IconButton } from '@chakra-ui/react';
-import { Link as RouterLink } from 'react-router-dom';
-import { FaHome, FaBoxes, FaShoppingCart } from 'react-icons/fa';
-import { HamburgerIcon } from '@chakra-ui/icons';
+import { Box, Container } from '@chakra-ui/react';
+import SideBarControl from '../ui/SideBarComponents/SideBarControl';
+import SideBarActions from '../ui/SideBarComponents/SideBarActons';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -29,77 +28,9 @@ export const Sidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }: Side
     >
       <Container maxW="container.xl">
         <Box p="4" h="full">
-          <Flex alignItems="center" justifyContent="space-between" mb="4">
-            <Heading size="md" display={{ base: 'block', md: isCollapsed ? 'none' : 'block' }}>
-              Menu
-            </Heading>
-            <IconButton
-              aria-label={isCollapsed ? 'Expand menu' : 'Collapse menu'}
-              icon={<HamburgerIcon boxSize="s" />}
-              onClick={onToggleCollapse}
-              variant="ghost"
-              size="sm"
-            />
-          </Flex>
+          <SideBarControl isCollapsed={isCollapsed} onToggleCollapse={onToggleCollapse} />
 
-          <Flex direction="column" gap="3" h="calc(100% - 64px)" >
-            <Button
-              as={RouterLink}
-              to="/"
-              variant="ghost"
-              onClick={onClose}
-              leftIcon={<FaHome />}
-              justifyContent="center"
-              w="full"
-              _hover={{
-                bg: 'primary.50',
-                color: 'primary.700',
-              }}
-              p={isCollapsed ? '0' : '4'}
-              m={0}
-              display="flex"
-            >
-              <Box display={{ base: 'none', md: isCollapsed ? 'none' : 'block' }}>
-                Home
-              </Box>
-            </Button>
-            <Button
-              as={RouterLink}
-              to="/products"
-              variant="ghost"
-              onClick={onClose}
-              leftIcon={<FaBoxes />}
-              justifyContent="center"
-              w="full"
-              _hover={{
-                bg: 'primary.50',
-                color: 'primary.700',
-              }}
-              display="flex"
-            >
-              <Box display={{ base: 'none', md: isCollapsed ? 'none' : 'block' }}>
-                Products
-              </Box>
-            </Button>
-            <Button
-              as={RouterLink}
-              to="/orders"
-              variant="ghost"
-              onClick={onClose}
-              leftIcon={<FaShoppingCart />}
-              justifyContent="center"
-              w="full"
-              _hover={{
-                bg: 'primary.50',
-                color: 'primary.700',
-              }}
-              display="flex"
-            >
-              <Box display={{ base: 'none', md: isCollapsed ? 'none' : 'block' }}>
-                Orders
-              </Box>
-            </Button>
-          </Flex>
+          <SideBarActions onClose={onClose} isCollapsed={isCollapsed} />
         </Box>
       </Container>
     </Box>

@@ -54,6 +54,43 @@ export const Header = () => {
     fetchClientRoles();
   }, []);
 
+  const switchRole = async (role: ClientRole) => {
+    try {
+      const response = await axios.post(`${API_URL}/api/auth/switch-role`, {
+        requestedRole: role
+      }, {
+        headers: {
+          'Authorization': `Bearer ${authSession?.token}`
+        }
+      });
+      setAuthSession({
+        user: response.data.user,
+        token: authSession!.token
+      });
+      localStorage.setItem('auth', JSON.stringify({
+        user: response.data.user,
+        token: authSession!.token
+      }));
+      toast({
+        title: 'Success',
+        description: 'Role switched successfully',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+        position: 'top-right'
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to switch role',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+        position: 'top-right'
+      });
+    }
+  }
+
   return (
     <Box
       bg="white"
@@ -86,7 +123,9 @@ export const Header = () => {
               <Box>
                 <FormSelectInputField
                   value={toDisplayCase(authSession!.user!.role)}
-                  onChange={(e) => setRole(e.target.value as ClientRole)}
+                  onChange={(e) => {
+                    switchRole(e.target.value as ClientRole);
+                  }}
                   options={clientRoles.map(role => ({
                     label: toDisplayCase(role),
                     value: role

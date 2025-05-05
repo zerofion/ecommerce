@@ -140,5 +140,38 @@ router.get('/list-roles', async (req, res) => {
   }
 })
 
+router.post('/switch-role', async (req, res) => {
+  const { authorization } = req.headers;
+  const { requestedRole } = req.body;
+  if (!authorization) {
+    return res.status(401).json({ error: 'No custom token provided' });
+  }
+  try {
+    const decodedToken = await auth.verifyIdToken(authorization.split('Bearer ')[1]);
+    const uid = decodedToken.uid;
+    const userDoc = await db.collection('users').doc(uid).get();
+    if (!userDoc.exists) {
+      return res.status(404).json({ error: 'User profile not found' });
+    }
+    const userData = userDoc.data() as UserProfile;
+    const roles = userData.roles;
+    if (!roles.includes(requestedRole)) {
+      return res.status(403).json({ error: 'User role mismatch' });
+    }
+    await auth.setCustomUserClaims(uid, {
+      role: requestedRole,
+    });
+    res.status(200).json({
+      user: {
+        email: userData.email,
+        name: userData.name,
+        role: requestedRole
+      }
+    });
+  } catch (error: any) {
+    console.error('List roles error:', error);
+    res.status(500).json({ error: error.message });    
+  }
+})
 
 export { router as authRouter };

@@ -1,7 +1,7 @@
 import { Box, Heading, Text, VStack, HStack, Button, Icon, Container } from '@chakra-ui/react';
 import { FaShoppingCart, FaBox, FaChartLine } from 'react-icons/fa';
 
-export const Home = () => {
+export const VendorHome = () => {
   return (
     <Container maxW="container.xl" mt={16}>
       <Box textAlign="center" mb={12}>
