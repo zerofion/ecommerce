@@ -1,6 +1,7 @@
 import { Box, Button, Flex, Heading, Container, IconButton } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
-import { FaHome, FaBoxes, FaShoppingCart, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaHome, FaBoxes, FaShoppingCart } from 'react-icons/fa';
+import { HamburgerIcon } from '@chakra-ui/icons';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -14,12 +15,12 @@ export const Sidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }: Side
     <Box
       as="nav"
       pos="fixed"
-      top="0"
+      top="4.2rem"
       left="0"
       zIndex={2}
       h="full"
       w="full"
-      maxW={isCollapsed ? '64px' : '250px'}
+      maxW={isCollapsed ? '250px' : '250px'}
       bg="white"
       boxShadow="md"
       display={{ base: isOpen ? 'block' : 'none', md: 'block' }}
@@ -34,13 +35,13 @@ export const Sidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }: Side
             </Heading>
             <IconButton
               aria-label={isCollapsed ? 'Expand menu' : 'Collapse menu'}
-              icon={isCollapsed ? <FaChevronRight /> : <FaChevronLeft />}
+              icon={<HamburgerIcon boxSize="s" />}
               onClick={onToggleCollapse}
               variant="ghost"
               size="sm"
             />
           </Flex>
-          
+
           <Flex direction="column" gap="3" h="calc(100% - 64px)" overflowY="auto">
             <Button
               as={RouterLink}

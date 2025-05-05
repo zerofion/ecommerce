@@ -1,5 +1,8 @@
-export type ClientRole = 'customer' | 'vendor' | 'b2b-customer';
-
+export enum ClientRole {
+  CUSTOMER = 'customer',
+  VENDOR = 'vendor',
+  B2B_CUSTOMER = 'b2b-customer'
+}
 
 export interface User {
   name?: string;

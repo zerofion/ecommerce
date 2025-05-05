@@ -62,8 +62,11 @@ router.post('/signup', async (req, res) => {
       id: uid
     });
 
+    await auth.setCustomUserClaims(uid, {
+      role: user.role,
+    });
+
     res.status(201).json({
-      token: customToken,
       user: {
         email: user.email,
         role: user.role,
@@ -98,17 +101,15 @@ router.post('/verify', async (req, res) => {
       return res.status(403).json({ error: 'User role mismatch' });
     }
 
-    // Generate new custom token
-    const customToken = await auth.createCustomToken(uid, {
-      id: uid,
-      role,
+    await auth.setCustomUserClaims(uid, {
+      role: role,
     });
 
     res.json({
-      token: customToken,
       user: {
         email: userData.email,
-        name: userData.name
+        name: userData.name,
+        role: role
       }
     });
 
@@ -117,6 +118,27 @@ router.post('/verify', async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 });
+
+router.get('/list-roles', async (req, res) => {
+  const { authorization } = req.headers;
+  if (!authorization) {
+    return res.status(401).json({ error: 'No custom token provided' });
+  }
+  try {
+    const decodedToken = await auth.verifyIdToken(authorization.split('Bearer ')[1]);
+    const uid = decodedToken.uid;
+    const userDoc = await db.collection('users').doc(uid).get();
+    if (!userDoc.exists) {
+      return res.status(404).json({ error: 'User profile not found' });
+    }
+    const userData = userDoc.data() as UserProfile;
+    const roles = userData.roles;
+    res.json(roles);
+  } catch (error: any) {
+    console.error('List roles error:', error);
+    res.status(500).json({ error: error.message });    
+  }
+})
 
 
 export { router as authRouter };

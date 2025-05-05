@@ -1,16 +1,18 @@
-import { Box, Flex, Heading, IconButton, Container, Link, Button, useToast } from '@chakra-ui/react';
-import { HamburgerIcon } from '@chakra-ui/icons';
+import { Box, Flex, Heading, Container, Link, Button, useToast } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuthHook';
-import { logout } from '../../services/auth';
+import { API_URL, logout } from '../../services/auth';
+import FormSelectInputField from '../ui/FormComponents/FormSelectInputField';
+import { useEffect, useState } from 'react';
+import { ClientRole } from '../../context/types';
+import axios from 'axios';
+import { toDisplayCase } from '../../utils/stringUtils';
 
-interface HeaderProps {
-  onToggle: () => void;
-}
-
-export const Header = ({ onToggle }: HeaderProps) => {
+export const Header = () => {
   const { authSession, setAuthSession } = useAuth();
+  const [role, setRole] = useState<ClientRole>(ClientRole.CUSTOMER);
   const toast = useToast();
+  const [clientRoles, setClientRoles] = useState<ClientRole[]>([]);
 
   const handleLogout = async () => {
     try {
@@ -36,6 +38,22 @@ export const Header = ({ onToggle }: HeaderProps) => {
     }
   };
 
+  useEffect(() => {
+    const fetchClientRoles = async () => {
+      try {
+        const roles = await axios.get(`${API_URL}/api/auth/list-roles`, {
+          headers: {
+            'Authorization': `Bearer ${authSession?.token}`
+          }
+        });
+        setClientRoles(roles.data);
+      } catch (error: any) {
+        console.error('Error fetching client roles:', error);
+      }
+    };
+    fetchClientRoles();
+  }, []);
+
   return (
     <Box
       bg="white"
@@ -48,30 +66,35 @@ export const Header = ({ onToggle }: HeaderProps) => {
       top={0}
       zIndex={1}
     >
-      <Container maxW="container.xl">
-        <Flex h={16} alignItems="center" justifyContent="space-between">
-          <IconButton
-            size="md"
-            icon={<HamburgerIcon />}
-            aria-label="Open Menu"
-            display={{ base: 'flex', md: 'none' }}
-            onClick={onToggle}
-            variant="ghost"
-          />
+      <Container maxW="container.xl"  >
+        <Flex h={16} alignItems="center" justifyContent="space-between" >
           <Heading size="lg" mb={4}>
             <Link as={RouterLink} to="/" _hover={{ textDecoration: 'none' }}>
               Product Order App
             </Link>
           </Heading>
           {authSession?.token && (
-            <Button
-              colorScheme="red"
-              size="sm"
-              ml={4}
-              onClick={handleLogout}
-            >
-              Logout
-            </Button>
+            <Flex alignItems="center">
+              <Button
+                m={4}
+                colorScheme="red"
+                size="sm"
+                onClick={handleLogout}
+              >
+                Logout
+              </Button>
+              <Box>
+                <FormSelectInputField
+                  value={toDisplayCase(authSession!.user!.role)}
+                  onChange={(e) => setRole(e.target.value as ClientRole)}
+                  options={clientRoles.map(role => ({
+                    label: toDisplayCase(role),
+                    value: role
+                  }))}
+                  isRequired={true}
+                />
+              </Box>
+            </Flex>
           )}
         </Flex>
       </Container>

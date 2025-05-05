@@ -96,7 +96,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, isLoading } = useAuth();
+  const { authSession, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -112,8 +112,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
+  if (!authSession) {
+    return <Navigate to="/auth/login" replace />;
   }
 
   return <>{children}</>;
@@ -125,7 +125,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { isOpen, onClose } = useDisclosure();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
 
   const toggleSidebarCollapse = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -139,7 +139,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={toggleSidebarCollapse}
       />
-      <Box flex="1" ml={{ base: 0, md: isSidebarCollapsed ? '64px' : '250px' }} p={4}>
+      <Box flex="1" ml={{ base: 0, md: "68px" }} p={4}>
         {children}
       </Box>
     </Flex>
@@ -149,7 +149,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 const App: React.FC = () => {
   const bg = useColorModeValue('gray.50', 'gray.900');
   const { authSession, isLoading } = useAuth();
-  const { onOpen } = useDisclosure();
 
   if (isLoading) {
     return (
@@ -171,8 +170,10 @@ const App: React.FC = () => {
       <Router>
 
         <Box bg={bg} minH="100vh">
-          {authSession && <Header onToggle={onOpen} />}
-          <Box maxW="container.xl" mx="auto" p={4}>
+          {authSession && <Header />}
+          <Box maxW="container.xl" mx="auto"
+            bgGradient="linear(to-b, blue.50, white)"
+            p={4}>
             <Routes>
               <Route path="/auth/:mode" element={<Auth />} />
               <Route

@@ -7,7 +7,7 @@ import { UserNotFoundError } from '../exceptions/UserNotFound';
 import { UserRoleNotFoundError } from '../exceptions/UserRoleNotFoundError';
 import { EmailNotVerifiedError } from '../exceptions/EmailNotVerifiedError';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002';
 
 interface AuthResponse {
   token: string;
@@ -15,7 +15,7 @@ interface AuthResponse {
   userExists: '1' | '0';
   roleExists: '1' | '0';
 }
-export const signUp = async (email: string, password: string, role: ClientRole): Promise<AuthResponse> => {
+export const signUp = async (email: string, password: string, role: ClientRole) => {
   let userJustCreated = false;
   try {
     // 1. Create user in Firebase
@@ -35,7 +35,7 @@ export const signUp = async (email: string, password: string, role: ClientRole):
     const idToken = await firebaseUser.getIdToken();
 
     // 3. Send to server to create user and set custom claims
-    const response = await axios.post<AuthResponse>(`${API_URL}/api/auth/signup`, {
+    await axios.post(`${API_URL}/api/auth/signup`, {
       idToken,
       user: {
         email,
@@ -47,17 +47,6 @@ export const signUp = async (email: string, password: string, role: ClientRole):
     if (userJustCreated) {
       await sendEmailVerification(userCredential!.user);
     }
-
-    return {
-      token: response.data.token,
-      user: {
-        email,
-        role,
-        name: ''
-      },
-      userExists: '0',
-      roleExists: '0'
-    };
   } catch (error: any) {
     if (error.response?.status === 409) {
       throw new UserRoleExistsError();
@@ -69,7 +58,7 @@ export const signUp = async (email: string, password: string, role: ClientRole):
   }
 };
 
-export const signUpWithGoogle = async (role?: ClientRole): Promise<AuthResponse> => {
+export const signUpWithGoogle = async (role?: ClientRole) => {
 
   const provider = new GoogleAuthProvider();
 
@@ -90,7 +79,7 @@ export const signUpWithGoogle = async (role?: ClientRole): Promise<AuthResponse>
 
   try {
     // First try to create a new user
-    const response = await axios.post(`${API_URL}/api/auth/signup`, {
+    await axios.post(`${API_URL}/api/auth/signup`, {
       idToken,
       user: {
         email,
@@ -99,16 +88,6 @@ export const signUpWithGoogle = async (role?: ClientRole): Promise<AuthResponse>
         provider: 'google'
       }
     });
-
-    return {
-      token: response.data.token,
-      user: {
-        email,
-        role: response.data.user.role
-      },
-      userExists: '0',
-      roleExists: '0'
-    };
   } catch (error: any) {
     // If signup fails because user exists, try to log in
     if (error.response?.status === 409) {
@@ -126,7 +105,7 @@ export const login = async (email: string, password: string, role: ClientRole): 
 
     // 2. Get ID token from Firebase
     const idToken = await firebaseUser.getIdToken();
-    
+
     const isEmailVerified = await firebaseUser.emailVerified;
 
     if (!isEmailVerified) {
@@ -138,7 +117,7 @@ export const login = async (email: string, password: string, role: ClientRole): 
 
     // 4. Return user data
     return {
-      token: response.data.token,
+      token: idToken,
       user: {
         email: firebaseUser.email || '',
         role: response.data.user.role,
@@ -189,7 +168,7 @@ export const signInWithGoogle = async (role: ClientRole): Promise<AuthResponse> 
     });
 
     return {
-      token: response.data.token,
+      token: idToken,
       user: {
         email,
         role: response.data.user.role,
