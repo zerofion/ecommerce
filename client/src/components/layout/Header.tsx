@@ -63,14 +63,14 @@ export const Header = () => {
           'Authorization': `Bearer ${authSession?.token}`
         }
       });
-      setAuthSession({
-        user: response.data.user,
-        token: authSession!.token
-      });
       localStorage.setItem('auth', JSON.stringify({
         user: response.data.user,
         token: authSession!.token
       }));
+      setAuthSession({
+        user: response.data.user,
+        token: authSession!.token
+      });
       toast({
         title: 'Success',
         description: 'Role switched successfully',
@@ -126,10 +126,10 @@ export const Header = () => {
                   onChange={(e) => {
                     switchRole(e.target.value as ClientRole);
                   }}
-                  options={clientRoles.map(role => ({
+                  options={[{ label: toDisplayCase(authSession!.user!.role), value: authSession!.user!.role }].concat(clientRoles.filter(role => role !== authSession!.user!.role).map(role => ({
                     label: toDisplayCase(role),
                     value: role
-                  }))}
+                  })))}
                   isRequired={true}
                 />
               </Box>

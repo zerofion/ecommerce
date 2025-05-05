@@ -191,7 +191,7 @@ const App: React.FC = () => {
                   )
                 }
               />
-              <Route
+              {authSession?.user!.role === ClientRole.VENDOR ? <Route
                 path="/products"
                 element={
                   <ProtectedRoute>
@@ -200,7 +200,16 @@ const App: React.FC = () => {
                     </Layout>
                   </ProtectedRoute>
                 }
-              />
+              /> : <Route
+                path="/products"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Navigate to="/" replace />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />}
               <Route
                 path="/orders"
                 element={

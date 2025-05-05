@@ -51,45 +51,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        try {
-          const idTokenResult = await user.getIdTokenResult();
-          if (!idTokenResult) {
-            throw new Error('ID token result not found');
-          }
-          
-          // Update auth session with fresh token
-          const role = idTokenResult.claims.role as string;
-          const sessionDetails = {
-            user: {
-              email: user.email,
-              name: user.displayName,
-              role: role as ClientRole
-            },
-            token: idTokenResult.token
-          };
-
-          setAuthSession(sessionDetails);
-          localStorage.setItem('auth', JSON.stringify(sessionDetails));
-        } catch (error) {
-          console.error('Token verification failed:', error);
-          setError('Token verification failed');
-          setAuthSession(null);
-          localStorage.removeItem('auth');
-        }
-      } else {
-        setAuthSession(null);
-        localStorage.removeItem('auth');
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-
   return (
     <AuthContext.Provider value={{
       authSession, setAuthSession,

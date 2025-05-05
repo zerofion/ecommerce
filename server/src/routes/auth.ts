@@ -159,7 +159,8 @@ router.post('/switch-role', async (req, res) => {
       return res.status(403).json({ error: 'User role mismatch' });
     }
     await auth.setCustomUserClaims(uid, {
-      role: requestedRole,
+      ...decodedToken.claims,
+      role: requestedRole
     });
     res.status(200).json({
       user: {
