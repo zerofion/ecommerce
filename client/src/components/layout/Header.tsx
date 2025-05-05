@@ -70,7 +70,7 @@ export const Header = () => {
         <Flex h={16} alignItems="center" justifyContent="space-between" >
           <Heading size="lg" mb={4}>
             <Link as={RouterLink} to="/" _hover={{ textDecoration: 'none' }}>
-              Product Order App
+              Neighbour Stores
             </Link>
           </Heading>
           {authSession?.token && (

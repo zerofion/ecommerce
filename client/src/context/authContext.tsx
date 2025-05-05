@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { User } from './types';
+import { User, ClientRole } from './types';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -44,7 +44,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const persistedAuth = sessionStorage.getItem('auth');
+  const persistedAuth = localStorage.getItem('auth');
   const initialAuth = persistedAuth ? JSON.parse(persistedAuth) : null;
 
   const [authSession, setAuthSession] = useState<Auth | null>(initialAuth || null);
@@ -53,15 +53,41 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 
   useEffect(() => {
-    if (authSession) {
-      sessionStorage.setItem('auth', JSON.stringify({
-        user: authSession.user,
-        token: authSession.token
-      }));
-    } else {
-      sessionStorage.removeItem('auth');
-    }
-  }, [authSession]);
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        try {
+          const idTokenResult = await user.getIdTokenResult();
+          if (!idTokenResult) {
+            throw new Error('ID token result not found');
+          }
+          
+          // Update auth session with fresh token
+          const role = idTokenResult.claims.role as string;
+          const sessionDetails = {
+            user: {
+              email: user.email,
+              name: user.displayName,
+              role: role as ClientRole
+            },
+            token: idTokenResult.token
+          };
+
+          setAuthSession(sessionDetails);
+          localStorage.setItem('auth', JSON.stringify(sessionDetails));
+        } catch (error) {
+          console.error('Token verification failed:', error);
+          setError('Token verification failed');
+          setAuthSession(null);
+          localStorage.removeItem('auth');
+        }
+      } else {
+        setAuthSession(null);
+        localStorage.removeItem('auth');
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
 
   return (

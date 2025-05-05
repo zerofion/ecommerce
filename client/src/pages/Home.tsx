@@ -6,7 +6,7 @@ export const Home = () => {
     <Container maxW="container.xl" mt={16}>
       <Box textAlign="center" mb={12}>
         <Heading as="h1" size="2xl" mb={4}>
-          Welcome to Product Order App
+          Welcome to Neighbour Stores
         </Heading>
         <Text fontSize="xl" color="gray.600">
           Manage your product orders and inventory efficiently

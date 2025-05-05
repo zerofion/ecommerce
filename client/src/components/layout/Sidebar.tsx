@@ -20,7 +20,7 @@ export const Sidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }: Side
       zIndex={2}
       h="full"
       w="full"
-      maxW={isCollapsed ? '250px' : '250px'}
+      maxW={isCollapsed ? '68px' : '250px'}
       bg="white"
       boxShadow="md"
       display={{ base: isOpen ? 'block' : 'none', md: 'block' }}
@@ -42,7 +42,7 @@ export const Sidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }: Side
             />
           </Flex>
 
-          <Flex direction="column" gap="3" h="calc(100% - 64px)" overflowY="auto">
+          <Flex direction="column" gap="3" h="calc(100% - 64px)" >
             <Button
               as={RouterLink}
               to="/"
@@ -55,6 +55,8 @@ export const Sidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }: Side
                 bg: 'primary.50',
                 color: 'primary.700',
               }}
+              p={isCollapsed ? '0' : '4'}
+              m={0}
               display="flex"
             >
               <Box display={{ base: 'none', md: isCollapsed ? 'none' : 'block' }}>

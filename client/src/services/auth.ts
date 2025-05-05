@@ -192,7 +192,7 @@ export const signInWithGoogle = async (role: ClientRole): Promise<AuthResponse> 
 export const logout = async () => {
   try {
     await auth.signOut();
-    sessionStorage.removeItem('auth');
+    localStorage.removeItem('auth');
   } catch (error: any) {
     throw new Error(error.message || 'Failed to logout');
   }
