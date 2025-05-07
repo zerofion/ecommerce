@@ -1,13 +1,26 @@
 import axios from 'axios';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, UserCredential, sendEmailVerification } from 'firebase/auth';
-import { ClientRole, User } from '../context/types';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, UserCredential, sendEmailVerification, getAuth } from 'firebase/auth';
+import { ClientRole, User, Session } from '../context/types';
 import { UserRoleExistsError } from '../exceptions/UserRoleExists';
-import { Auth, auth } from '../context/authContext';
 import { UserNotFoundError } from '../exceptions/UserNotFound';
 import { UserRoleNotFoundError } from '../exceptions/UserRoleNotFoundError';
 import { EmailNotVerifiedError } from '../exceptions/EmailNotVerifiedError';
+import { initializeApp } from '@firebase/app';
 
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
 
 interface AuthResponse {
   token: string;
@@ -188,6 +201,22 @@ export const signInWithGoogle = async (role: ClientRole): Promise<AuthResponse> 
     throw error;
   }
 };
+
+export const refreshSession = async (setAuthSession: React.Dispatch<React.SetStateAction<Session | null>>) => {
+  try {
+    const idToken = await auth.currentUser?.getIdToken(true)
+    setAuthSession({
+      token: idToken || null,
+      user: auth.currentUser ? {
+        name: auth.currentUser.displayName || null,
+        email: auth.currentUser.email || null,
+        role: ClientRole.CUSTOMER // Default to CUSTOMER role until we get the actual role from the server
+      } : null
+    })
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to refresh session');
+  }
+}
 
 export const logout = async () => {
   try {

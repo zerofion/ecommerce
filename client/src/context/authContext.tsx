@@ -1,39 +1,21 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { User, ClientRole } from './types';
-
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
-};
-
-export interface Auth {
-  user: User | null;
-  token: string | null;
-}
+import { API_URL, refreshSession } from '../services/auth';
+import axios from 'axios';
+import { Session } from './types';
 
 export interface AuthContextType {
-  authSession: Auth | null;
-  setAuthSession: React.Dispatch<React.SetStateAction<Auth | null>>;
+  authSession: Session | null;
+  setAuthSession: React.Dispatch<React.SetStateAction<Session | null>>;
   isLoading: boolean;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
   error: string | null;
   setError: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-
 export const AuthContext = createContext<AuthContextType>({
   authSession: null,
   setAuthSession: () => { },
-  isLoading: true,
+  isLoading: false,
   setIsLoading: () => { },
   error: null,
   setError: () => { },
@@ -47,9 +29,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const persistedAuth = localStorage.getItem('auth');
   const initialAuth = persistedAuth ? JSON.parse(persistedAuth) : null;
 
-  const [authSession, setAuthSession] = useState<Auth | null>(initialAuth || null);
+  const [authSession, setAuthSession] = useState<Session | null>(initialAuth || null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (authSession) {
+      const verifyToken = async () => {
+        await axios.post(`${API_URL}/api/auth/verify`, {
+          idToken: authSession.token,
+          role: authSession?.user?.role,
+        });
+      };
+      try {
+        verifyToken();
+      } catch (error: any) {
+        if (error.response?.status === 401) {
+          refreshSession(setAuthSession);
+        }
+      }
+    }
+  }, [authSession]);
 
   return (
     <AuthContext.Provider value={{

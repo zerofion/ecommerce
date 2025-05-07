@@ -1,7 +1,7 @@
 import express from 'express';
 import { db, firebaseApp } from '../services/firebase';
-import { Order, OrderItem } from '../services/firebase';
-import { getUserRole, isUserAdmin } from '../services/firebase';
+import { Order } from '../services/firebase';
+import { getUserRole } from '../services/firebase';
 
 const router = express.Router();
 

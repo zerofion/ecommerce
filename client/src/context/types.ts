@@ -1,3 +1,8 @@
+export interface Session {
+  user: User | null;
+  token: string | null;
+}
+
 export enum ClientRole {
   CUSTOMER = 'customer',
   VENDOR = 'vendor',

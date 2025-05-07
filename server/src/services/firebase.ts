@@ -75,12 +75,12 @@ export const getUserRole = async (uid: string): Promise<Role> => {
   }
 };
 
-export const isUserAdmin = async (uid: string): Promise<boolean> => {
+export const isVendor = async (uid: string): Promise<boolean> => {
   try {
     const role = await getUserRole(uid);
-    return role === 'admin';
+    return role === 'vendor';
   } catch (error) {
-    console.error('Failed to check admin status:', error);
+    console.error('Failed to check vendor status:', error);
     throw error;
   }
 };

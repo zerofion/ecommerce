@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ChakraProvider, extendTheme, Box, Flex, useColorModeValue, useDisclosure, Spinner, Text } from '@chakra-ui/react';
+import { ChakraProvider, extendTheme, Box, Flex, useColorModeValue, useDisclosure, Spinner, Stack, HStack, Skeleton } from '@chakra-ui/react';
 import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
 
@@ -155,16 +155,19 @@ const App: React.FC = () => {
 
   if (isLoading) {
     return (
-      <Box height="100vh" display="flex" alignItems="center" justifyContent="center">
-        {/* <Spinner
-          thickness="10px"
-          speed="0.65s"
-          emptyColor="gray.200"
-          color="blue.500"
-          size="xl"
-        /> */}
-        <Text>Loading...</Text>
-      </Box>
+      <ChakraProvider theme={theme}>
+        <Box height="100vh" p={8} w="100vw">
+          <Stack gap="6" maxW="xs">
+            <HStack width="full">
+            </HStack>
+            <Skeleton height="100px" w="100vw" />
+            <Flex gap="4" w="100vw" wrap="wrap">
+              <Skeleton height="90vh" w="4rem" maxW="4rem" variant="pulse"/>
+              <Skeleton height="90vh" w="100rem" maxW="100rem" variant="pulse"/>
+            </Flex>
+          </Stack>
+        </Box>
+      </ChakraProvider>
     );
   }
 

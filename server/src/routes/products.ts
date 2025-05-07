@@ -1,12 +1,13 @@
 import express from 'express';
-import { db, firebaseApp } from '../services/firebase';
+import { db, firebaseApp, isVendor } from '../services/firebase';
 import { Product } from '../services/firebase';
-import { getUserRole, isUserAdmin } from '../services/firebase';
+import { AuthenticatedRequest } from '../types/authenticated-request';
+
 
 const router = express.Router();
 
 // Middleware to check admin role
-const requireAdmin = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+const requireVendor = async (req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -19,12 +20,17 @@ const requireAdmin = async (req: express.Request, res: express.Response, next: e
     }
 
     const decodedToken = await firebaseApp.auth().verifyIdToken(token);
-    const isAdmin = await isUserAdmin(decodedToken.uid);
+    const isAdmin = await isVendor(decodedToken.uid);
 
     if (!isAdmin) {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
+    // Attach user details to request object
+    req.user = {
+      uid: decodedToken.uid,
+      role: decodedToken.claims.role as string
+    };
     next();
   } catch (error) {
     console.error('Admin check error:', error);
@@ -65,7 +71,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create product (admin only)
-router.post('/', requireAdmin, async (req, res) => {
+router.post('/', requireVendor, async (req, res) => {
   try {
     const productData = req.body as Omit<Product, 'id' | 'createdAt'>;
     const docRef = await db.collection('products').add({
@@ -85,7 +91,7 @@ router.post('/', requireAdmin, async (req, res) => {
 });
 
 // Update product (admin only)
-router.put('/:id', requireAdmin, async (req, res) => {
+router.put('/:id', requireVendor, async (req, res) => {
   try {
     const updates = req.body;
     const docRef = db.collection('products').doc(req.params.id);
@@ -106,7 +112,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
 });
 
 // Delete product (admin only)
-router.delete('/:id', requireAdmin, async (req, res) => {
+router.delete('/:id', requireVendor, async (req, res) => {
   try {
     await db.collection('products').doc(req.params.id).delete();
     res.status(204).send();

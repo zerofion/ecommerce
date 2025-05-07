@@ -114,6 +114,9 @@ router.post('/verify', async (req, res) => {
     });
 
   } catch (error: any) {
+    if (error.code === 'auth/id-token-expired') {
+      return res.status(401).json({ error: 'ID token expired' });
+    }
     console.error('Verify error:', error);
     res.status(400).json({ error: error.message });
   }
@@ -160,7 +163,7 @@ router.post('/switch-role', async (req, res) => {
     }
     await auth.setCustomUserClaims(uid, {
       ...decodedToken.claims,
-      role: requestedRole
+      
     });
     res.status(200).json({
       user: {
