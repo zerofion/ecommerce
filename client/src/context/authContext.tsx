@@ -36,18 +36,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     if (authSession) {
       const verifyToken = async () => {
-        await axios.post(`${API_URL}/api/auth/verify`, {
-          idToken: authSession.token,
-          role: authSession?.user?.role,
-        });
-      };
-      try {
-        verifyToken();
-      } catch (error: any) {
-        if (error.response?.status === 401) {
-          refreshSession(setAuthSession);
+        try {
+          await axios.post(`${API_URL}/api/auth/verify`, {
+            idToken: authSession.token,
+            role: authSession?.user?.role,
+          });
+        } catch (error: any) {
+          if (error.response?.status === 401) {
+            refreshSession(setAuthSession);
+          }
         }
-      }
+      };
+      verifyToken();
     }
   }, [authSession]);
 

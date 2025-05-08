@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, UserCredential, sendEmailVerification, getAuth } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, UserCredential, sendEmailVerification, getAuth, onAuthStateChanged } from 'firebase/auth';
 import { ClientRole, User, Session } from '../context/types';
 import { UserRoleExistsError } from '../exceptions/UserRoleExists';
 import { UserNotFoundError } from '../exceptions/UserNotFound';
@@ -204,15 +204,31 @@ export const signInWithGoogle = async (role: ClientRole): Promise<AuthResponse> 
 
 export const refreshSession = async (setAuthSession: React.Dispatch<React.SetStateAction<Session | null>>) => {
   try {
-    const idToken = await auth.currentUser?.getIdToken(true)
-    setAuthSession({
-      token: idToken || null,
-      user: auth.currentUser ? {
-        name: auth.currentUser.displayName || null,
-        email: auth.currentUser.email || null,
-        role: ClientRole.CUSTOMER // Default to CUSTOMER role until we get the actual role from the server
-      } : null
-    })
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const tokenResult = await user.getIdTokenResult(true);
+        const idToken = tokenResult.token;
+
+        setAuthSession({
+          token: idToken,
+          user: {
+            name: user.displayName || null,
+            email: user.email || null,
+            role: tokenResult.claims.role as ClientRole || ClientRole.CUSTOMER
+          }
+        })
+        localStorage.setItem('auth', JSON.stringify({
+          token: idToken,
+          user: {
+            name: user.displayName || null,
+            email: user.email || null,
+            role: tokenResult.claims.role as ClientRole || ClientRole.CUSTOMER
+          }
+        }))
+      } else {
+        console.log("No user is signed in.");
+      }
+    });
   } catch (error: any) {
     throw new Error(error.message || 'Failed to refresh session');
   }
