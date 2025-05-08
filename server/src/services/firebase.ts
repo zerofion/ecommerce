@@ -28,6 +28,7 @@ export interface User {
 }
 
 export interface Product {
+  tenantId: string;
   id: string;
   sku: string;
   name: string;
@@ -37,7 +38,7 @@ export interface Product {
   stock: number;
   imageUrl?: string;
   mrpPerQuantity: number;
-  sellingPerQuantity: number;
+  b2bMrpPerQuantity: number;
   paidCostPerQuantity: number;
   allowLoose: boolean;
   minQuantity: number;

@@ -112,14 +112,12 @@ export const Header = () => {
           </Heading>
           {authSession?.token && (
             <Flex alignItems="center">
-              <Button
-                m={4}
-                colorScheme="red"
-                size="sm"
-                onClick={handleLogout}
-              >
-                Logout
-              </Button>
+
+              {authSession?.user?.name &&
+                <Box m={4}>
+                  Hello {authSession?.user?.name}
+                </Box>}
+
               <Box>
                 <FormSelectInputField
                   value={toDisplayCase(authSession!.user!.role)}
@@ -133,6 +131,15 @@ export const Header = () => {
                   isRequired={true}
                 />
               </Box>
+
+              <Button
+                m={4}
+                colorScheme="red"
+                size="sm"
+                onClick={handleLogout}
+              >
+                Logout
+              </Button>
             </Flex>
           )}
         </Flex>

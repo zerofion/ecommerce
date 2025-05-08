@@ -1,10 +1,12 @@
 import { Box, Heading, VStack, HStack, Button, Container, FormControl, FormLabel, Input, Select, useToast, Table, Thead, Tbody, Tr, Th, Td, IconButton, Spinner, Image } from '@chakra-ui/react';
 import { FaEdit, FaTrash } from 'react-icons/fa';
 import { useState, useEffect, useCallback } from 'react';
-import { mockFirestore, mockStorage } from '../services/mockFirebase';
+import { API_URL } from '../services/auth';
 import { Product } from '../types';
+import { useAuth } from '../hooks/useAuthHook';
 
 export const Products = () => {
+  const { authSession } = useAuth();
   const toast = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -18,7 +20,7 @@ export const Products = () => {
     stock: 0,
     imageUrl: '',
     mrpPerQuantity: 0,
-    sellingPerQuantity: 0,
+    b2bMrpPerQuantity: 0,
     paidCostPerQuantity: 0,
     allowLoose: false,
     minQuantity: 1,
@@ -35,17 +37,13 @@ export const Products = () => {
   const loadProducts = useCallback(async () => {
     try {
       setIsLoading(true);
-      const data = await mockFirestore.products.get();
-      console.log('Loaded products from mock:', data);
-      
-      // Ensure we have an array of products
+      const response = await fetch(`${API_URL}/api/products`);
+      const data = await response.json();
+
       if (Array.isArray(data)) {
-        console.log('Setting products state with:', data);
-        setProducts([...data]); // Create a new array instance
-        console.log('Products state after set:', products);
+        setProducts(data);
       } else {
-        console.error('Invalid data format:', data);
-        setProducts([]); // Set empty array if data is invalid
+        setProducts([]);
       }
     } catch (error) {
       console.error('Error loading products:', error);
@@ -56,23 +54,43 @@ export const Products = () => {
         duration: 3000,
         isClosable: true,
       });
-      setProducts([]); // Set empty array on error
+      setProducts([]);
     } finally {
       setIsLoading(false);
     }
   }, [setProducts, toast]);
 
-  // Add a useEffect to log state changes
-  useEffect(() => {
-    console.log('Current products state:', products);
-  }, [products]);
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    if (editingProduct) {
+      setEditingProduct((prev: Product | null) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          [name]: name === 'allowLoose' ? (value === 'on') :
+            name === 'minQuantity' ? parseInt(value) :
+              name === 'price' ? parseFloat(value) :
+                name === 'stock' ? parseInt(value) :
+                  name === 'mrpPerQuantity' ? parseFloat(value) :
+                    name === 'b2bMrpPerQuantity' ? parseFloat(value) :
+                      name === 'paidCostPerQuantity' ? parseFloat(value) :
+                        value
+        };
+      })
+    }
+
     setNewProduct((prev: Product) => ({
       ...prev,
-      [name]: value,
+      [name]: name === 'allowLoose' ? (value === 'on') :
+        name === 'minQuantity' ? parseInt(value) :
+          name === 'price' ? parseFloat(value) :
+            name === 'stock' ? parseInt(value) :
+              name === 'mrpPerQuantity' ? parseFloat(value) :
+                name === 'b2bMrpPerQuantity' ? parseFloat(value) :
+                  name === 'paidCostPerQuantity' ? parseFloat(value) :
+                    value
     }));
+
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,8 +101,8 @@ export const Products = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!newProduct.name || !newProduct.price || !newProduct.stock) {
+
+    if (!newProduct.name || !newProduct.price || !newProduct.b2bMrpPerQuantity) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -96,17 +114,22 @@ export const Products = () => {
     }
 
     try {
-      if (selectedImage) {
-        const storageResult = await mockStorage.ref('products').put(selectedImage);
-        newProduct.imageUrl = storageResult.downloadURL;
+      const url = editingProduct ? `${API_URL}/api/products/update` : `${API_URL}/api/products/create`;
+      const response = await fetch(url, {
+        method: 'POST',
+        body: JSON.stringify(newProduct),
+        headers: {
+          'Authorization': `Bearer ${authSession?.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create product');
       }
 
-      if (editingProduct) {
-        await mockFirestore.products.update(editingProduct.id, newProduct);
-      } else {
-        await mockFirestore.products.add(newProduct);
-      }
-
+      const data = await response.json();
+      setProducts(prev => [...prev, data]);
       setNewProduct({
         id: '',
         sku: '',
@@ -117,7 +140,133 @@ export const Products = () => {
         stock: 0,
         imageUrl: '',
         mrpPerQuantity: 0,
-        sellingPerQuantity: 0,
+        b2bMrpPerQuantity: 0,
+        paidCostPerQuantity: 0,
+        allowLoose: false,
+        minQuantity: 1,
+        createdAt: new Date().toISOString()
+      });
+      setSelectedImage(null);
+      toast({
+        title: "Success",
+        description: "Product created successfully",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error('Error submitting product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create product",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleAddProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProduct.name || !newProduct.price || !newProduct.b2bMrpPerQuantity) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+
+    try {
+      const response = await fetch(`${API_URL}/api/products/create`, {
+        method: 'POST',
+        body: JSON.stringify(newProduct),
+        headers: {
+          'Authorization': `Bearer ${authSession?.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create product');
+      }
+
+      const data = await response.json();
+      setProducts(prev => [...prev, data]);
+      setNewProduct({
+        id: '',
+        sku: '',
+        name: '',
+        description: '',
+        category: '',
+        price: 0,
+        stock: 0,
+        imageUrl: '',
+        mrpPerQuantity: 0,
+        b2bMrpPerQuantity: 0,
+        paidCostPerQuantity: 0,
+        allowLoose: false,
+        minQuantity: 1,
+        createdAt: new Date().toISOString()
+      });
+      setSelectedImage(null);
+      toast({
+        title: "Success",
+        description: "Product created successfully",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error('Error submitting product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create product",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleEditProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const response = await fetch(`${API_URL}/api/products/update`, {
+        method: 'POST',
+        body: JSON.stringify(editingProduct),
+        headers: {
+          'Authorization': `Bearer ${authSession?.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create product');
+      }
+
+      const data = await response.json();
+      setProducts(products.map((product) => {
+        if (product.id === data.id) {
+          return data;
+        }
+        return product;
+      }));
+      setNewProduct({
+        id: '',
+        sku: '',
+        name: '',
+        description: '',
+        category: '',
+        price: 0,
+        stock: 0,
+        imageUrl: '',
+        mrpPerQuantity: 0,
+        b2bMrpPerQuantity: 0,
         paidCostPerQuantity: 0,
         allowLoose: false,
         minQuantity: 1,
@@ -125,21 +274,18 @@ export const Products = () => {
       });
       setSelectedImage(null);
       setEditingProduct(null);
-      
       toast({
         title: "Success",
-        description: editingProduct ? "Product updated successfully" : "Product added successfully",
+        description: "Product updated successfully",
         status: "success",
         duration: 3000,
         isClosable: true,
       });
-
-      await loadProducts();
     } catch (error) {
       console.error('Error submitting product:', error);
       toast({
         title: "Error",
-        description: editingProduct ? "Failed to update product" : "Failed to add product",
+        description: "Failed to update product",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -154,7 +300,12 @@ export const Products = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      await mockFirestore.products.delete(id);
+      await fetch(`${API_URL}/api/products/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authSession?.token}`
+        }
+      });
       toast({
         title: "Success",
         description: "Product deleted successfully",
@@ -181,7 +332,7 @@ export const Products = () => {
         <Heading mb={8}>Products</Heading>
 
         <Box bg="white" p={6} borderRadius="md" boxShadow="sm" mb={8}>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={editingProduct ? handleEditProduct : handleAddProduct}>
             <VStack spacing={4}>
               <FormControl isRequired>
                 <FormLabel>SKU</FormLabel>
@@ -242,13 +393,13 @@ export const Products = () => {
 
               <HStack>
                 <FormControl isRequired>
-                  <FormLabel>Stock</FormLabel>
+                  <FormLabel>B2B Price</FormLabel>
                   <Input
-                    name="stock"
+                    name="b2bMrpPerQuantity"
                     type="number"
-                    value={newProduct.stock}
+                    value={newProduct.b2bMrpPerQuantity}
                     onChange={handleInputChange}
-                    placeholder="Enter stock quantity"
+                    placeholder="Enter B2B Price"
                   />
                 </FormControl>
 
@@ -296,7 +447,7 @@ export const Products = () => {
                 <Th>Description</Th>
                 <Th>Category</Th>
                 <Th>Price</Th>
-                <Th>Stock</Th>
+                <Th>B2B Price</Th>
                 <Th>Allow Loose</Th>
                 <Th>Actions</Th>
               </Tr>
@@ -341,7 +492,7 @@ export const Products = () => {
                       <Td>{product.description}</Td>
                       <Td>{product.category}</Td>
                       <Td>{product.price}</Td>
-                      <Td>{product.stock}</Td>
+                      <Td>{product.b2bMrpPerQuantity}</Td>
                       <Td>{product.allowLoose ? 'Yes' : 'No'}</Td>
                       <Td>
                         <HStack spacing={2}>

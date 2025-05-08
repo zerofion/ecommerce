@@ -29,10 +29,10 @@ const requireVendor = async (req: AuthenticatedRequest, res: express.Response, n
     // Attach user details to request object
     req.user = {
       uid: decodedToken.uid,
-      role: decodedToken.claims.role as string
+      role: decodedToken.role as string
     };
     next();
-  } catch (error) {
+  } catch (error: any) {
     console.error('Admin check error:', error);
     res.status(401).json({ error: 'Invalid token' });
   }
@@ -71,14 +71,17 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create product (admin only)
-router.post('/', requireVendor, async (req, res) => {
+router.post('/create', requireVendor, async (req: AuthenticatedRequest, res) => {
   try {
-    const productData = req.body as Omit<Product, 'id' | 'createdAt'>;
+    const productData = req.body as Partial<Product>;
+    delete productData.id;
+    delete productData.createdAt;
     const docRef = await db.collection('products').add({
       ...productData,
+      tenantId: req.user?.uid,
       createdAt: new Date().toISOString()
     });
-    
+
     const doc = await docRef.get();
     res.status(201).json({
       id: doc.id,
@@ -87,6 +90,26 @@ router.post('/', requireVendor, async (req, res) => {
   } catch (error) {
     console.error('Error creating product:', error);
     res.status(500).json({ error: 'Failed to create product' });
+  }
+});
+
+router.post('/update', requireVendor, async (req: AuthenticatedRequest, res) => {
+  try {
+    const productData = req.body as Product;
+    const docRef = db.collection('products').doc(productData.id);
+    await docRef.update({
+      ...productData,
+      updatedAt: new Date().toISOString()
+    });
+
+    const doc = await docRef.get();
+    res.json({
+      id: doc.id,
+      ...doc.data()
+    } as Product);
+  } catch (error) {
+    console.error('Error updating product:', error);
+    res.status(500).json({ error: 'Failed to update product' });
   }
 });
 
@@ -99,7 +122,7 @@ router.put('/:id', requireVendor, async (req, res) => {
       ...updates,
       updatedAt: new Date().toISOString()
     });
-    
+
     const doc = await docRef.get();
     res.json({
       id: doc.id,

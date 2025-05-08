@@ -10,7 +10,7 @@ export interface Product {
   stock: number;
   imageUrl?: string;
   mrpPerQuantity: number;
-  sellingPerQuantity: number;
+  b2bMrpPerQuantity: number;
   paidCostPerQuantity: number;
   allowLoose: boolean;
   minQuantity: number;
