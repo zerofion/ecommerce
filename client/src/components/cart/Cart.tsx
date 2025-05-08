@@ -2,9 +2,13 @@ import React from 'react';
 import { Box, VStack, HStack, Text, Button, IconButton, Badge, useToast } from '@chakra-ui/react';
 import { FaTrash, FaPlus, FaMinus } from 'react-icons/fa';
 import { useShoppingSession } from '../../contexts/ShoppingSession';
+import { useAuth } from '../../hooks/useAuthHook';
+import { ClientRole } from '../../context/types';
 
 export const Cart: React.FC = () => {
   const { state, actions } = useShoppingSession();
+  const { authSession } = useAuth();
+
   const toast = useToast();
 
   const handlePlaceOrder = async () => {
@@ -45,7 +49,7 @@ export const Cart: React.FC = () => {
   const handleQuantityChange = (productId: string, increment: number) => {
     const item = state.cartItems.find(item => item.product.id === productId);
     if (!item) return;
-    
+
     const newQuantity = increment > 0 ? item.quantity + 1 : item.quantity - 1;
     if (newQuantity >= 1) {
       actions.updateQuantity(productId, newQuantity);
@@ -66,7 +70,7 @@ export const Cart: React.FC = () => {
               <Box>
                 <Text fontWeight="bold">{item.product.name}</Text>
                 <Text fontSize="sm" color="gray.600">
-                  ₹{item.product.price}
+                  ₹{authSession?.user?.role === ClientRole.CUSTOMER ? item.product.price : item.product.b2bMrpPerQuantity}
                 </Text>
               </Box>
               <HStack>
@@ -95,10 +99,14 @@ export const Cart: React.FC = () => {
           ))}
           <Box mt={4}>
             <Text fontWeight="bold" mb={2}>
-              Total: ₹{state.cartItems.reduce((sum: number, item) => sum + (item.product.price * item.quantity), 0)}
+              Total: ₹{state.cartItems.reduce((sum: number, item) => sum + ((
+                authSession?.user?.role === ClientRole.CUSTOMER ? item.product.price : item.product.b2bMrpPerQuantity
+              ) * item.quantity), 0)}
             </Text>
             <Text fontWeight="bold" color="green.500">
-              ₹{state.cartItems.reduce((sum: number, item) => sum + (item.product.price * item.quantity), 0).toFixed(2)}
+              ₹{state.cartItems.reduce((sum: number, item) => sum + ((
+                authSession?.user?.role === ClientRole.CUSTOMER ? item.product.price : item.product.b2bMrpPerQuantity
+              ) * item.quantity), 0).toFixed(2)}
             </Text>
             <Button colorScheme="blue" onClick={handlePlaceOrder}>
               Place Order

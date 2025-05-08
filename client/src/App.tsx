@@ -187,7 +187,7 @@ const App: React.FC = () => {
                 element={
                   authSession ? (
                     <Layout>
-                      {authSession!.user!.role === ClientRole.CUSTOMER ? <CustomerHome /> : <VendorHome />}
+                      {authSession!.user!.role === ClientRole.CUSTOMER || authSession!.user!.role === ClientRole.B2B_CUSTOMER ? <CustomerHome /> : <VendorHome />}
                     </Layout>
                   ) : (
                     <Navigate to="/auth/login" replace />

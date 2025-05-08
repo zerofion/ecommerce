@@ -73,29 +73,18 @@ export const ShoppingSessionProvider: React.FC<{ children: React.ReactNode }> = 
   }, [toast]);
 
   const addToCart = useCallback((product: Product) => {
-    setState(prev => {
-      const existingItem = prev.cartItems.find(item => item.product.id === product.id);
-      const updatedItems = [...prev.cartItems];
-      
-      if (existingItem) {
-        const index = prev.cartItems.findIndex(item => item.product.id === product.id);
-        updatedItems[index].quantity = existingItem.quantity + 1;
-      } else {
-        updatedItems.push({ product, quantity: 1 });
-      }
-      
-      return { ...prev, cartItems: updatedItems };
-    });
+    const existingItem = state.cartItems.find(item => item.product.id === product.id);
+    const updatedItems = [...state.cartItems];
     
-    toast({
-      title: 'Added to cart',
-      description: `${product.name} added to cart`,
-      status: 'success',
-      duration: 3000,
-      isClosable: true,
-      position: 'top-right'
-    });
-  }, [toast]);
+    if (existingItem) {
+      const index = state.cartItems.findIndex(item => item.product.id === product.id);
+      updatedItems[index].quantity = existingItem.quantity + 1;
+    } else {
+      updatedItems.push({ product, quantity: 1 });
+    }
+    
+    setState(prev => ({ ...prev, cartItems: updatedItems }));
+  }, [state.cartItems, setState]);
 
   const removeFromCart = useCallback((productId: string) => {
     setState(prev => ({

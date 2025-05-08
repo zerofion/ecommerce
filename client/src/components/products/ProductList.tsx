@@ -1,27 +1,35 @@
-import { Box, Heading, Text, HStack, Button, Grid, GridItem, Select, Image, Spinner } from '@chakra-ui/react';
+import React, { useCallback } from 'react';
+import { Box, Heading, Text, HStack, Button, Grid, GridItem, Select, Image, Spinner, useToast } from '@chakra-ui/react';
 import { FaFilter, FaShoppingCart } from 'react-icons/fa';
 import { categories, Product } from '../../types';
-import { useToast } from '@chakra-ui/react';
 import { useShoppingSession } from '../../contexts/ShoppingSession';
 import { toDisplayCase } from '../../utils/stringUtils';
+import { useAuth } from '../../hooks/useAuthHook';
+import { ClientRole } from '../../context/types';
 
 
 
 export const ProductList: React.FC = () => {
   const { state, actions } = useShoppingSession();
+  const { authSession } = useAuth();
   const toast = useToast();
 
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = useCallback((product: Product, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    // Only show toast for new items
+    if (!state.cartItems.some(item => item.product.id === product.id)) {
+      toast({
+        title: 'Added to cart',
+        description: `${product.name} added to cart`,
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+        position: 'top-right'
+      });
+    }
     actions.addToCart(product);
-    toast({
-      title: 'Added to cart',
-      description: `${product.name} added to cart`,
-      status: 'success',
-      duration: 3000,
-      isClosable: true,
-      position: 'top-right'
-    });
-  };
+  }, [actions, state.cartItems]);
 
   const filteredProducts = state.selectedCategory === 'All' || state.selectedCategory === ''
     ? state.products
@@ -64,11 +72,16 @@ export const ProductList: React.FC = () => {
                 <Heading size="sm" mb={1}>{product.name}</Heading>
                 <Text color="gray.600" mb={2}>{product.description}</Text>
                 <HStack justify="space-between" align="center">
-                  <Text fontWeight="bold">₹{product.price}</Text>
+                  <Text fontWeight="bold">₹{authSession?.user?.role === ClientRole.CUSTOMER ?  product.price : product.b2bMrpPerQuantity}</Text>
                   <Button
                     leftIcon={<FaShoppingCart />}
                     colorScheme="green"
-                    onClick={() => handleAddToCart(product)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      // Only call handleAddToCart once
+                      handleAddToCart(product, e);
+                    }}
                   >
                     Add to Cart
                   </Button>
