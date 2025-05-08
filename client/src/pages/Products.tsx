@@ -2,8 +2,9 @@ import { Box, Heading, VStack, HStack, Button, Container, FormControl, FormLabel
 import { FaEdit, FaTrash } from 'react-icons/fa';
 import { useState, useEffect, useCallback } from 'react';
 import { API_URL } from '../services/auth';
-import { Product } from '../types';
+import { categories, Product } from '../types';
 import { useAuth } from '../hooks/useAuthHook';
+import { toDisplayCase } from '../utils/stringUtils';
 
 export const Products = () => {
   const { authSession } = useAuth();
@@ -372,10 +373,12 @@ export const Products = () => {
                     value={newProduct.category}
                     onChange={handleInputChange}
                   >
-                    <option value="">Select category</option>
-                    <option value="grocery">Grocery</option>
-                    <option value="dairy">Dairy</option>
-                    <option value="beverages">Beverages</option>
+                    {categories.map((category) => {
+                      const value = category === '' ? 'Select Category' : category;
+                      return (
+                        <option key={category} value={value}>{toDisplayCase(value)}</option>
+                      )
+                    })}
                   </Select>
                 </FormControl>
 

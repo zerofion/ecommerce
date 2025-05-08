@@ -142,7 +142,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={toggleSidebarCollapse}
       />
-      <Box flex="1" ml={{ base: 0, md: "68px" }} p={4}>
+      <Box flex="1" ml={{ base: 0, md: "68px" }} p={4} w="100vw">
         {children}
       </Box>
     </Flex>
@@ -162,8 +162,8 @@ const App: React.FC = () => {
             </HStack>
             <Skeleton height="100px" w="100vw" />
             <Flex gap="4" w="100vw" wrap="wrap">
-              <Skeleton height="90vh" w="4rem" maxW="4rem" variant="pulse"/>
-              <Skeleton height="90vh" w="100rem" maxW="100rem" variant="pulse"/>
+              <Skeleton height="90vh" w="4rem" maxW="4rem" variant="pulse" />
+              <Skeleton height="90vh" w="100rem" maxW="100rem" variant="pulse" />
             </Flex>
           </Stack>
         </Box>
@@ -175,11 +175,11 @@ const App: React.FC = () => {
     <ChakraProvider theme={theme}>
       <Router>
 
-        <Box bg={bg} minH="100vh">
+        <Box bg={bg} minH="100vh" minW="100vw" >
           {authSession && <Header />}
-          <Box maxW="container.xl" mx="auto"
+          <Box mx="auto"
             bgGradient="linear(to-b, blue.50, white)"
-            p={4}>
+            p={4} m={0} w="100vw" className='w-full'>
             <Routes>
               <Route path="/auth/:mode" element={<Auth />} />
               <Route

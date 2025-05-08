@@ -35,6 +35,13 @@ export interface Order {
   updatedAt?: string;
 }
 
+export const categories = [
+  "",
+  "grocery",
+  "dairy",
+  "beverages"
+]
+
 export interface AuthState {
   user: User | null;
   loading: boolean;

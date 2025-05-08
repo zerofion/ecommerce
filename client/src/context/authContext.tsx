@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { API_URL, refreshSession } from '../services/auth';
 import axios from 'axios';
-import { Session } from './types';
+import { ClientRole, Session } from './types';
 
 export interface AuthContextType {
   authSession: Session | null;
@@ -41,6 +41,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             idToken: authSession.token,
             role: authSession?.user?.role,
           });
+          localStorage.setItem('auth', JSON.stringify({
+            token: authSession.token,
+            user: {
+              name: authSession.user?.name || null,
+              email: authSession.user?.email || null,
+              role: authSession.user?.role || ClientRole.CUSTOMER
+            }
+          }))
         } catch (error: any) {
           if (error.response?.status === 401) {
             refreshSession(setAuthSession);
@@ -48,6 +56,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
       };
       verifyToken();
+
     }
   }, [authSession]);
 
