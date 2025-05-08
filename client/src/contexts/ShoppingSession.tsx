@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { Product } from '../types';
 import { API_URL } from '../services/auth';
 import { useToast } from '@chakra-ui/react';
+import { useAuth } from '../hooks/useAuthHook';
 
 interface ShoppingSessionState {
   products: Product[];
@@ -27,7 +28,6 @@ interface ShoppingSessionContextType {
 }
 
 const ShoppingSessionContext = createContext<ShoppingSessionContextType | undefined>(undefined);
-
 export const useShoppingSession = () => {
   const context = useContext(ShoppingSessionContext);
   if (context === undefined) {
@@ -38,9 +38,10 @@ export const useShoppingSession = () => {
 
 export const ShoppingSessionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const toast = useToast();
+  const { authSession } = useAuth();
   const [state, setState] = useState<ShoppingSessionState>({
     products: [],
-    selectedCategory: 'all',
+    selectedCategory: '',
     loading: true,
     cartItems: [],
     showCart: false,
@@ -48,7 +49,11 @@ export const ShoppingSessionProvider: React.FC<{ children: React.ReactNode }> = 
 
   const fetchProducts = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/api/products`);
+      const response = await fetch(`${API_URL}/api/products`, {
+        headers: {
+          'Authorization': `Bearer ${authSession?.token}`
+        }
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch products');
       }

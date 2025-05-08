@@ -86,5 +86,15 @@ export const isVendor = async (uid: string): Promise<boolean> => {
   }
 };
 
+export const isCustomer = async (uid: string): Promise<boolean> => {
+  try {
+    const role = await getUserRole(uid);
+    return role === 'customer';
+  } catch (error) {
+    console.error('Failed to check customer status:', error);
+    throw error;
+  }
+};
+
 // Export the app instance for token verification
 export const firebaseApp = app;

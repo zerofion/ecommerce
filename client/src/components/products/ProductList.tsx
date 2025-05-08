@@ -1,8 +1,9 @@
 import { Box, Heading, Text, HStack, Button, Grid, GridItem, Select, Image, Spinner } from '@chakra-ui/react';
-import { FaShoppingCart } from 'react-icons/fa';
-import { Product } from '../../types';
+import { FaFilter, FaShoppingCart } from 'react-icons/fa';
+import { categories, Product } from '../../types';
 import { useToast } from '@chakra-ui/react';
 import { useShoppingSession } from '../../contexts/ShoppingSession';
+import { toDisplayCase } from '../../utils/stringUtils';
 
 
 
@@ -22,23 +23,28 @@ export const ProductList: React.FC = () => {
     });
   };
 
-  const filteredProducts = state.selectedCategory === 'all'
+  const filteredProducts = state.selectedCategory === 'All' || state.selectedCategory === ''
     ? state.products
-    : state.products.filter(product => product.category === state.selectedCategory);
+    : state.products.filter(product => product.category.toLowerCase() === state.selectedCategory.toLowerCase());
 
   return (
     <Box p={4}>
       <Heading size="lg" mb={4}>Products</Heading>
       <HStack justify="space-between" mb={4}>
         <Select
-          value={state.selectedCategory}
+          value={state.selectedCategory || 'Filter by category'}
           onChange={(e) => actions.setSelectedCategory(e.target.value)}
           placeholder="Filter by category"
+          icon={<FaFilter />}
         >
-          <option value="all">All</option>
-          <option value="grocery">Grocery</option>
-          <option value="dairy">Dairy</option>
-          <option value="beverages">Beverages</option>
+          {categories.map((category) => {
+            const value = category === '' ? 'All' : toDisplayCase(category);
+            return (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            );
+          })}
         </Select>
       </HStack>
       {state.loading ? (

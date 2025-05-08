@@ -38,7 +38,11 @@ export const Products = () => {
   const loadProducts = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${API_URL}/api/products`);
+      const response = await fetch(`${API_URL}/api/vendor/products`, {
+        headers: {
+          'Authorization': `Bearer ${authSession?.token}`
+        }
+      });
       const data = await response.json();
 
       if (Array.isArray(data)) {
@@ -100,73 +104,6 @@ export const Products = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!newProduct.name || !newProduct.price || !newProduct.b2bMrpPerQuantity) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-      return;
-    }
-
-    try {
-      const url = editingProduct ? `${API_URL}/api/products/update` : `${API_URL}/api/products/create`;
-      const response = await fetch(url, {
-        method: 'POST',
-        body: JSON.stringify(newProduct),
-        headers: {
-          'Authorization': `Bearer ${authSession?.token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create product');
-      }
-
-      const data = await response.json();
-      setProducts(prev => [...prev, data]);
-      setNewProduct({
-        id: '',
-        sku: '',
-        name: '',
-        description: '',
-        category: '',
-        price: 0,
-        stock: 0,
-        imageUrl: '',
-        mrpPerQuantity: 0,
-        b2bMrpPerQuantity: 0,
-        paidCostPerQuantity: 0,
-        allowLoose: false,
-        minQuantity: 1,
-        createdAt: new Date().toISOString()
-      });
-      setSelectedImage(null);
-      toast({
-        title: "Success",
-        description: "Product created successfully",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (error) {
-      console.error('Error submitting product:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create product",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-    }
-  };
-
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProduct.name || !newProduct.price || !newProduct.b2bMrpPerQuantity) {
@@ -182,7 +119,7 @@ export const Products = () => {
 
 
     try {
-      const response = await fetch(`${API_URL}/api/products/create`, {
+      const response = await fetch(`${API_URL}/api/vendor/products/create`, {
         method: 'POST',
         body: JSON.stringify(newProduct),
         headers: {
@@ -237,7 +174,7 @@ export const Products = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch(`${API_URL}/api/products/update`, {
+      const response = await fetch(`${API_URL}/api/vendor/products/update`, {
         method: 'POST',
         body: JSON.stringify(editingProduct),
         headers: {
@@ -301,7 +238,7 @@ export const Products = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      await fetch(`${API_URL}/api/products/${id}`, {
+      await fetch(`${API_URL}/api/vendor/products/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${authSession?.token}`

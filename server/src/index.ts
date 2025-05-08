@@ -2,9 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import { config } from './config';
 import { authRouter } from './routes/auth';
-import { productsRouter } from './routes/products';
+import { vendorProductsRouter } from './routes/vendorProducts';
 import { errorHandler } from './middleware/errorHandler';
 import { ordersRouter } from './routes/orders';
+import { productsRouter } from './routes/products';
 
 const app = express();
 
@@ -14,6 +15,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRouter);
+app.use('/api/vendor/products', vendorProductsRouter);
 app.use('/api/products', productsRouter);
 app.use('/api/orders', ordersRouter);
 
