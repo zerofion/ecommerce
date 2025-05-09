@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, UserCredential, sendEmailVerification, getAuth, onAuthStateChanged } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, UserCredential, sendEmailVerification, getAuth, onAuthStateChanged } from 'firebase/auth';
 import { ClientRole, User, Session } from '../context/types';
 import { UserRoleExistsError } from '../exceptions/UserRoleExists';
 import { UserNotFoundError } from '../exceptions/UserNotFound';
@@ -72,43 +72,56 @@ export const signUp = async (email: string, password: string, role: ClientRole) 
 };
 
 export const signUpWithGoogle = async (role?: ClientRole) => {
-
-  const provider = new GoogleAuthProvider();
-
-  // Configure the provider with the required scopes
-  provider.setCustomParameters({
-    prompt: 'select_account'
-  });
-
-  const result = await signInWithPopup(auth, provider) as UserCredential;
-
-  if (!result.user) {
-    throw new Error('No user data received from Google');
-  }
-
-  const idToken = await result.user.getIdToken();
-  const email = result.user.email || '';
-  const name = result.user.displayName || '';
-
   try {
-    // First try to create a new user
-    await axios.post(`${API_URL}/api/auth/signup`, {
-      idToken,
-      user: {
-        email,
-        role: role || 'customer',
-        name,
-        provider: 'google'
-      }
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({
+      prompt: 'select_account'
     });
-  } catch (error: any) {
-    // If signup fails because user exists, try to log in
-    if (error.response?.status === 409) {
-      throw new UserRoleExistsError();
+    provider.addScope('profile');
+    provider.addScope('email');
+
+    // Check if we're on mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      // For mobile, we just start the redirect flow
+      await signInWithRedirect(auth, provider);
+      return;
+    } else {
+      // For desktop, use popup
+      const result = await signInWithPopup(auth, provider) as UserCredential;
+      if (!result.user) {
+        throw new Error('No user data received from Google');
+      }
+
+      const idToken = await result.user.getIdToken();
+      const email = result.user.email || '';
+      const name = result.user.displayName || '';
+
+      try {
+        // First try to create a new user
+        await axios.post(`${API_URL}/api/auth/signup`, {
+          idToken,
+          user: {
+            email,
+            role: role || 'customer',
+            name,
+            provider: 'google'
+          }
+        });
+      } catch (error: any) {
+        // If signup fails because user exists, try to log in
+        if (error.response?.status === 409) {
+          throw new UserRoleExistsError();
+        }
+        throw error;
+      }
     }
+  } catch (error: any) {
+    console.error('Google Signup Error:', error);
     throw error;
   }
-}
+};
 
 export const login = async (email: string, password: string, role: ClientRole): Promise<AuthResponse> => {
   try {
@@ -156,40 +169,75 @@ export const login = async (email: string, password: string, role: ClientRole): 
 };
 
 
+export const handleRedirectResult = async () => {
+  try {
+    const pendingResult = await getRedirectResult(auth);
+    if (pendingResult) {
+      const credential = GoogleAuthProvider.credentialFromResult(pendingResult);
+      const user = pendingResult.user;
+      const idToken = await user.getIdToken();
+      const email = user.email || '';
+      const name = user.displayName || '';
+      return {
+        idToken,
+        user,
+        email,
+        name
+      };
+    }
+    return null;
+  } catch (error: any) {
+    console.error('Error handling redirect result:', error);
+    return null;
+  }
+};
+
 export const signInWithGoogle = async (role: ClientRole): Promise<AuthResponse> => {
   try {
     const provider = new GoogleAuthProvider();
-
-    // Configure the provider with the required scopes
     provider.setCustomParameters({
       prompt: 'select_account'
     });
+    provider.addScope('profile');
+    provider.addScope('email');
 
-    const result = await signInWithPopup(auth, provider) as UserCredential;
+    // Check if we're on mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-    if (!result.user) {
-      throw new Error('No user data received from Google');
-    }
+    if (isMobile) {
+      // For mobile, we just start the redirect flow
+      await signInWithRedirect(auth, provider);
+      return null as any; // This will be handled by the redirect
+    } else {
+      // For desktop, use popup
+      const result = await signInWithPopup(auth, provider) as UserCredential;
+      if (!result.user) {
+        throw new Error('No user data received from Google');
+      }
 
-    const idToken = await result.user.getIdToken();
-    const email = result.user.email || '';
+      const idToken = await result.user.getIdToken();
+      const email = result.user.email || '';
+      const name = result.user.displayName || '';
 
-    // For login, verify the token and get user data
-    const response = await axios.post(`${API_URL}/api/auth/verify`, {
-      idToken,
-      role,
-    });
-
-    return {
-      token: idToken,
-      user: {
+      // For login, verify the token and get user data
+      const response = await axios.post(`${API_URL}/api/auth/verify`, {
+        idToken,
+        role,
         email,
-        role: response.data.user.role,
-        name: response.data.user.name
-      },
-      userExists: '1',
-      roleExists: '1'
-    };
+        name
+      });
+
+      return {
+        token: idToken,
+        user: {
+          email: response.data.user.email,
+          role: response.data.user.role,
+          name: response.data.user.name
+        },
+        userExists: '1',
+        roleExists: '1'
+      };
+    }
   } catch (error: any) {
     if (error.response?.status === 404) {
       throw new UserNotFoundError();
