@@ -6,6 +6,7 @@ import { vendorProductsRouter } from './routes/vendorProducts';
 import { errorHandler } from './middleware/errorHandler';
 import { ordersRouter } from './routes/orders';
 import { productsRouter } from './routes/products';
+import { vendorOrdersRouter } from './routes/vendorOrders';
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/vendor/products', vendorProductsRouter);
 app.use('/api/products', productsRouter);
 app.use('/api/orders', ordersRouter);
+app.use('/api/vendor/orders', vendorOrdersRouter);
 
 // Error handling middleware
 app.use(errorHandler);

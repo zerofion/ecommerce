@@ -85,6 +85,7 @@ export default function SideBarActions({ onClose, isCollapsed }: SideBarActionsP
                     </Flex>
                 );
             case ClientRole.CUSTOMER:
+            case ClientRole.B2B_CUSTOMER:
                 return (
                     <Flex direction="column" gap="3" h="calc(100% - 64px)">
                         {commonActions()}

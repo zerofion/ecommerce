@@ -72,7 +72,7 @@ export const ProductList: React.FC = () => {
                 <Heading size="sm" mb={1}>{product.name}</Heading>
                 <Text color="gray.600" mb={2}>{product.description}</Text>
                 <HStack justify="space-between" align="center">
-                  <Text fontWeight="bold">₹{authSession?.user?.role === ClientRole.CUSTOMER ?  product.price : product.b2bMrpPerQuantity}</Text>
+                  <Text fontWeight="bold">₹{authSession?.user?.role === ClientRole.CUSTOMER ? product.price : product.b2bMrpPerQuantity}</Text>
                   <Button
                     leftIcon={<FaShoppingCart />}
                     colorScheme="green"

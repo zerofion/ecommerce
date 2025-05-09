@@ -3,6 +3,7 @@ import { Product } from '../types';
 import { API_URL } from '../services/auth';
 import { useToast } from '@chakra-ui/react';
 import { useAuth } from '../hooks/useAuthHook';
+import { ClientRole } from '../context/types';
 
 interface ShoppingSessionState {
   products: Product[];
@@ -20,6 +21,14 @@ interface ShoppingSessionActions {
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   placeOrder: () => Promise<void>;
+}
+
+interface OrderItem {
+  productId: string;
+  name: string;
+  quantity: number;
+  price: number;
+  vendorId: string;
 }
 
 interface ShoppingSessionContextType {
@@ -75,14 +84,14 @@ export const ShoppingSessionProvider: React.FC<{ children: React.ReactNode }> = 
   const addToCart = useCallback((product: Product) => {
     const existingItem = state.cartItems.find(item => item.product.id === product.id);
     const updatedItems = [...state.cartItems];
-    
+
     if (existingItem) {
       const index = state.cartItems.findIndex(item => item.product.id === product.id);
       updatedItems[index].quantity = existingItem.quantity + 1;
     } else {
       updatedItems.push({ product, quantity: 1 });
     }
-    
+
     setState(prev => ({ ...prev, cartItems: updatedItems }));
   }, [state.cartItems, setState]);
 
@@ -110,13 +119,16 @@ export const ShoppingSessionProvider: React.FC<{ children: React.ReactNode }> = 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authSession?.token}`
         },
         body: JSON.stringify({
           items: state.cartItems.map(item => ({
             productId: item.product.id,
+            name: item.product.name,
             quantity: item.quantity,
-            price: item.product.price,
-          })),
+            price: authSession?.user?.role === ClientRole.B2B_CUSTOMER ? item.product.b2bMrpPerQuantity : item.product.mrpPerQuantity,
+            vendorId: item.product.tenantId
+          }))
         }),
       });
 

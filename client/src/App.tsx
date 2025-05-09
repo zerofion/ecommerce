@@ -12,6 +12,7 @@ import Auth from './pages/Auth';
 import { ClientRole } from './context/types';
 import { CustomerHome } from './pages/CustomerHome';
 import { VendorHome } from './pages/VendorHome';
+import { CustomerOrders } from './pages/CustomerOrders';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -135,7 +136,7 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute>
                     <Layout>
-                      <Orders />
+                      {authSession?.user!.role === ClientRole.CUSTOMER || authSession?.user!.role === ClientRole.B2B_CUSTOMER ? <CustomerOrders /> : <Orders />}
                     </Layout>
                   </ProtectedRoute>
                 }

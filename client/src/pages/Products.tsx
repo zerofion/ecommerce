@@ -275,6 +275,7 @@ export const Products = () => {
             colorScheme="blue"
             onClick={() => navigate('/')}
             ml={4}
+            display={{ base: 'block', md: 'none' }}
           >
             Home
           </Button>

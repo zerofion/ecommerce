@@ -163,7 +163,7 @@ router.post('/switch-role', async (req, res) => {
     }
     await auth.setCustomUserClaims(uid, {
       ...decodedToken.claims,
-      
+      role: requestedRole,
     });
     res.status(200).json({
       user: {

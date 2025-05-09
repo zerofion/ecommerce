@@ -16,19 +16,22 @@ export interface Product {
   minQuantity: number;
   createdAt: string;
   updatedAt?: string;
+  tenantId: string;
+}
+
+export interface OrderItem {
+  productId: string;
+  name: string;
+  quantity: number;
+  price: number;
+  vendorId: string;
 }
 
 export interface Order {
   id: string;
   customerId: string;
-  customerName: string;
-  customerEmail: string;
-  products: Array<{
-    productId: string;
-    name: string;
-    quantity: number;
-    price: number;
-  }>;
+  vendorId: string;
+  products: OrderItem[];
   total: number;
   status: 'pending' | 'delivered' | 'cancelled';
   createdAt: string;

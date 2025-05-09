@@ -1,4 +1,4 @@
-import { Box, Heading, Container, Button, VStack, HStack, Text, Card, CardHeader, CardBody, CardFooter, Icon } from '@chakra-ui/react';
+import { Box, Heading, Container, Table, Thead, Tr, Th, Tbody, Td, Button, VStack, HStack, Text, Card, CardHeader, CardBody, CardFooter, Stack, useBreakpointValue, Icon } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { API_URL } from '../services/auth';
 import { Order } from '../types';
@@ -136,14 +136,14 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
   );
 };
 
-export const Orders = () => {
+export const CustomerOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const { authSession } = useAuth();
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/vendor/orders/user`, {
+        const response = await fetch(`${API_URL}/api/orders/user`, {
           headers: {
             Authorization: `Bearer ${authSession?.token}`,
           },
@@ -162,7 +162,7 @@ export const Orders = () => {
       <Heading mb={8}>Orders</Heading>
       <VStack spacing={6}>
         {orders.map((order) => (
-          <OrderCard key={order.id} order={order} />
+          <OrderCard key={order.id} order={order} isMobile={false} />
         ))}
       </VStack>
     </Container>

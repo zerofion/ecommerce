@@ -51,13 +51,13 @@ export interface OrderItem {
   name: string;
   quantity: number;
   price: number;
+  vendorId: string;
 }
 
 export interface Order {
   id: string;
   customerId: string;
-  customerName: string;
-  customerEmail: string;
+  vendorId: string;
   products: OrderItem[];
   total: number;
   status: 'pending' | 'delivered' | 'cancelled';
