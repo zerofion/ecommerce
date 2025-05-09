@@ -94,15 +94,18 @@ export const Header = () => {
 
   return (
     <Box
+      position="fixed"
+      top={0}
+      left={0}
+      right={0}
+      zIndex={10}
       bg="white"
       boxShadow="sm"
       borderBottom="1px"
       borderColor="gray.100"
       px={4}
-      pos="fixed"
+      py={2}
       w="full"
-      top={0}
-      zIndex={1}
     >
       <Container maxW="container.xl">
         <Flex

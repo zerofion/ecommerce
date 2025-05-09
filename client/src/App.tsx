@@ -94,9 +94,9 @@ const App: React.FC = () => {
   return (
     <ChakraProvider theme={theme}>
       <Router>
-        <Box bg={theme.colors.gray[50]} minH="100vh" minW="100vw">
-          {authSession && <Header />}
-          <Box mx="auto" bgGradient="linear(to-b, blue.50, white)" p={4} m={0} w="100vw" className='w-full'>
+          <Box bg={theme.colors.gray[50]} minH="100vh" minW="100vw" pt={{ base: '180px', md: '0px' }}>
+            {authSession && <Header />}
+            <Box mx="auto" bgGradient="linear(to-b, blue.50, white)" p={4} m={0} w="100vw" className='w-full' pt={{ base: '64px', md: '0px' }}>
             <Routes>
               <Route path="/auth/:mode" element={<Auth />} />
               <Route

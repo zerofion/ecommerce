@@ -10,25 +10,32 @@ export const ShoppingWindow: React.FC = () => {
   return (
     <Box
       w="full"
-      ml={{ base: 0, md: "24" }}
-      p={{ base: 4, md: 8 }}
-      gap={8}
+      p={{ base: 2, md: 8 }}
+      gap={{ base: 4, md: 8 }}
       display="flex"
       flexDirection="column"
+      mt={{ base: '64px', md: '80px' }}
+      pt={{ base: '64px', md: '80px' }}
     >
-      <Box textAlign="center" mb={8}>
+      <Box 
+        textAlign="center" 
+        mb={{ base: 4, md: 8 }}
+        px={{ base: 2, md: 0 }}
+      >
         <Heading
           as="h1"
-          size="2xl"
-          mb={4}
+          size={{ base: "lg", md: "2xl" }}
+          mb={2}
           color="blue.600"
           fontWeight="extrabold"
         >
           Welcome to Neighbour Stores
         </Heading>
         <Text
-          fontSize="xl"
+          fontSize={{ base: "sm", md: "xl" }}
           color="gray.600"
+          maxW={{ base: "90vw", md: "container.md" }}
+          mx="auto"
         >
           Order from your nearest local store
         </Text>
@@ -37,7 +44,9 @@ export const ShoppingWindow: React.FC = () => {
       <Flex
         justify="space-between"
         align="center"
-        mb={8}
+        mb={{ base: 4, md: 8 }}
+        wrap="wrap"
+        gap={2}
       >
         <Button
           colorScheme={state.showCart ? "red" : "blue"}

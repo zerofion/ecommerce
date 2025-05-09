@@ -1,13 +1,15 @@
-import { Box, Heading, VStack, HStack, Button, Container, FormControl, FormLabel, Input, Select, useToast, Table, Thead, Tbody, Tr, Th, Td, IconButton, Spinner, Image } from '@chakra-ui/react';
+import { Box, Heading, VStack, HStack, Button, Container, FormControl, FormLabel, Input, Select, useToast, Table, Thead, Tbody, Tr, Th, Td, IconButton, Spinner, Image, Flex } from '@chakra-ui/react';
 import { FaEdit, FaTrash } from 'react-icons/fa';
 import { useState, useEffect, useCallback } from 'react';
 import { API_URL } from '../services/auth';
 import { categories, Product } from '../types';
 import { useAuth } from '../hooks/useAuthHook';
 import { toDisplayCase } from '../utils/stringUtils';
+import { useNavigate } from 'react-router-dom';
 
 export const Products = () => {
   const { authSession } = useAuth();
+  const navigate = useNavigate();
   const toast = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -267,8 +269,16 @@ export const Products = () => {
   return (
     <Box h="100vh" overflow="auto" mt={"4rem"}>
       <Container maxW="container.xl" p={4}>
-        <Heading mb={8}>Products</Heading>
-
+        <Flex justifyContent="space-between">
+          <Heading mb={8}>Products</Heading>
+          <Button
+            colorScheme="blue"
+            onClick={() => navigate('/')}
+            ml={4}
+          >
+            Home
+          </Button>
+        </Flex>
         <Box bg="white" p={6} borderRadius="md" boxShadow="sm" mb={8}>
           <form onSubmit={editingProduct ? handleEditProduct : handleAddProduct}>
             <VStack spacing={4}>
