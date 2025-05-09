@@ -6,10 +6,10 @@ export const CustomerHome: React.FC = () => {
   return (
     <ShoppingSessionProvider>
       <Box 
-        w="calc(100vw - 24rem)" 
+        w="full" 
         h="100vh" 
         m={0} 
-        mt={16}
+        mt={{ base: 4, md: 16 }}
         bgGradient="linear(to-b, blue.50, white)"
         p={0}
       >

@@ -1,5 +1,5 @@
 import { Box, Flex, Heading, Text, Button, Select } from '@chakra-ui/react';
-import { FaFilter, FaShoppingCart } from 'react-icons/fa';
+import { FaShoppingCart } from 'react-icons/fa';
 import { ProductList } from './products/ProductList';
 import { Cart } from './cart/Cart';
 import { useShoppingSession } from '../contexts/ShoppingSession';
@@ -9,9 +9,9 @@ export const ShoppingWindow: React.FC = () => {
 
   return (
     <Box
-      w="calc(100vw - 24rem)"
-      ml="24"
-      p={8}
+      w="full"
+      ml={{ base: 0, md: "24" }}
+      p={{ base: 4, md: 8 }}
       gap={8}
       display="flex"
       flexDirection="column"
@@ -50,33 +50,44 @@ export const ShoppingWindow: React.FC = () => {
         </Button>
       </Flex>
 
-      <Flex
-        gap={8}
+      <Box
         w="full"
-        justifyContent="space-between"
         maxW="container.xl"
         mx="auto"
       >
-        <Box flex="1">
+        <Box
+          display={{ base: 'block', md: 'none' }}
+          mb={4}
+        >
           <ProductList />
         </Box>
-        <Box
-          w="300px"
-          display={state.showCart ? 'block' : 'none'}
-          boxShadow="lg"
-          borderRadius="lg"
-          p={6}
-          bg="white"
-          position="fixed"
-          right="24"
-          top="16"
-          zIndex={10}
-          maxH="calc(100vh - 32px)"
-          overflowY="auto"
+
+        <Flex
+          display={{ base: 'none', md: 'flex' }}
+          gap={8}
+          justifyContent="space-between"
         >
-          <Cart />
-        </Box>
-      </Flex>
+          <Box flex="1">
+            <ProductList />
+          </Box>
+          <Box
+            w="300px"
+            display={state.showCart ? 'block' : 'none'}
+            boxShadow="lg"
+            borderRadius="lg"
+            p={6}
+            bg="white"
+            position="fixed"
+            right="24"
+            top="16"
+            zIndex={10}
+            maxH="calc(100vh - 32px)"
+            overflowY="auto"
+          >
+            <Cart />
+          </Box>
+        </Flex>
+      </Box>
     </Box>
   );
 };

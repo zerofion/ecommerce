@@ -11,5 +11,10 @@ export default defineConfig({
       '@firebase/firestore',
       '@firebase/storage'
     ]
+  },
+  server: {
+    host: true,
+    port: 5173,
+    strictPort: true
   }
 })

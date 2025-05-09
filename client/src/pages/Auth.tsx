@@ -23,11 +23,16 @@ export default function Auth() {
         <Box m={4}>
           <AuthForm />
         </Box>
-        <Flex align="space-between" justify="center" wrap="wrap" >
+        <Flex 
+          align="space-between" 
+          justify="center" 
+          wrap="wrap" 
+          display={{ base: 'none', md: 'flex' }}
+        >
           <Image
             src={authImage1}
             alt="Neighbour Stores"
-            maxW={{ base: '100%', md: '500px' }}
+            maxW="500px"
             borderRadius="lg"
             boxShadow="lg"
             mr={4}
@@ -35,15 +40,14 @@ export default function Auth() {
           <Image
             src={authImage3}
             alt="Neighbour Stores"
-            maxW={{ base: '100%', md: '500px' }}
+            maxW="500px"
             borderRadius="lg"
             boxShadow="lg"
           />
-
           <Image
             src={authImage2}
             alt="Neighbour Stores"
-            maxW={{ base: '100%', md: '500px' }}
+            maxW="500px"
             borderRadius="lg"
             boxShadow="lg"
           />

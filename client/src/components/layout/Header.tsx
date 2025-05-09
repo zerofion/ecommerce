@@ -10,7 +10,6 @@ import { toDisplayCase } from '../../utils/stringUtils';
 
 export const Header = () => {
   const { authSession, setAuthSession } = useAuth();
-  const [role, setRole] = useState<ClientRole>(ClientRole.CUSTOMER);
   const toast = useToast();
   const [clientRoles, setClientRoles] = useState<ClientRole[]>([]);
 
@@ -51,8 +50,10 @@ export const Header = () => {
         console.error('Error fetching client roles:', error);
       }
     };
-    fetchClientRoles();
-  }, []);
+    if (authSession?.token) {
+      fetchClientRoles();
+    }
+  }, [authSession?.token]);
 
   const switchRole = async (role: ClientRole) => {
     try {
@@ -103,22 +104,42 @@ export const Header = () => {
       top={0}
       zIndex={1}
     >
-      <Container maxW="container.xl"  >
-        <Flex h={16} alignItems="center" justifyContent="space-between" >
+      <Container maxW="container.xl">
+        <Flex
+          h={{ base: 'auto', md: '16' }}
+          alignItems="center"
+          justifyContent="space-between"
+          wrap="wrap"
+          gap={{ base: 4, md: 0 }}
+        >
           <Heading size="lg" mb={4}>
             <Link as={RouterLink} to="/" _hover={{ textDecoration: 'none' }}>
               Neighbour Stores
             </Link>
           </Heading>
           {authSession?.token && (
-            <Flex alignItems="center">
-
-              {authSession?.user?.name &&
-                <Box m={4}>
-                  Hello {authSession?.user?.name}
-                </Box>}
-
-              <Box>
+            <Box
+              display={{ base: 'flex', md: 'none' }}
+              flexDirection="column"
+              alignItems="center"
+              w="full"
+              p={4}
+              bg="white"
+              boxShadow="sm"
+              borderRadius="md"
+              mb={4}
+            >
+              <Box w="full" mb={4}>
+                <Box fontSize="lg" fontWeight="bold" color="blue.600" textAlign="center" mb={2}>
+                  Welcome back
+                </Box>
+                {authSession?.user?.name &&
+                  <Box fontSize="md" color="gray.600" textAlign="center">
+                    {authSession?.user?.name}
+                  </Box>
+                }
+              </Box>
+              <Box w="full" mb={4}>
                 <FormSelectInputField
                   value={toDisplayCase(authSession!.user!.role)}
                   onChange={(e) => {
@@ -131,9 +152,41 @@ export const Header = () => {
                   isRequired={true}
                 />
               </Box>
-
               <Button
-                m={4}
+                w="full"
+                colorScheme="red"
+                onClick={handleLogout}
+              >
+                Logout
+              </Button>
+            </Box>
+          )}
+          {authSession?.token && (
+            <Flex
+              display={{ base: 'none', md: 'flex' }}
+              alignItems="center"
+              gap={4}
+              h="16"
+            >
+              {authSession?.user?.name &&
+                <Box>
+                  Hello {authSession?.user?.name}
+                </Box>
+              }
+              <Box w="200px">
+                <FormSelectInputField
+                  value={toDisplayCase(authSession!.user!.role)}
+                  onChange={(e) => {
+                    switchRole(e.target.value as ClientRole);
+                  }}
+                  options={[{ label: toDisplayCase(authSession!.user!.role), value: authSession!.user!.role }].concat(clientRoles.filter(role => role !== authSession!.user!.role).map(role => ({
+                    label: toDisplayCase(role),
+                    value: role
+                  })))}
+                  isRequired={true}
+                />
+              </Box>
+              <Button
                 colorScheme="red"
                 size="sm"
                 onClick={handleLogout}
