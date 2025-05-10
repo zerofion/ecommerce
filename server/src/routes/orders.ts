@@ -1,5 +1,5 @@
 import express from 'express';
-import { db, firebaseApp, OrderItem, Product } from '../services/firebase';
+import { db, firebaseApp, OrderItem, OrderStatus, Product, UpdateOrderStatusRequest } from '../services/firebase';
 import { Order } from '../services/firebase';
 import { getUserRole } from '../services/firebase';
 import { AuthenticatedRequest } from '../types/authenticated-request';
@@ -37,21 +37,6 @@ const requireRole = (requiredRole: string[]) => {
     }
   };
 };
-
-// Get all orders (admin only)
-router.get('/', requireRole(['admin']), async (req, res) => {
-  try {
-    const snapshot = await db.collection('orders').get();
-    const orders = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as Order));
-    res.json(orders);
-  } catch (error) {
-    console.error('Error fetching orders:', error);
-    res.status(500).json({ error: 'Failed to fetch orders' });
-  }
-});
 
 // Get single order
 router.get('/user/:id', requireRole(['customer', 'b2b-customer']), async (req, res) => {
@@ -149,24 +134,91 @@ router.get('/user', requireRole(['customer', 'b2b-customer']), async (req: Authe
   }
 });
 
-// Update order status (admin only)
-router.put('/:id/status', requireRole(['admin']), async (req, res) => {
+
+// Update order status
+router.put('/:id/status', requireRole(['customer', 'b2b-customer']), async (req: AuthenticatedRequest & { body: UpdateOrderStatusRequest }, res) => {
   try {
-    const { status } = req.body;
-    const docRef = db.collection('orders').doc(req.params.id);
-    await docRef.update({
+    const { status }: UpdateOrderStatusRequest = req.body;
+    const orderId = req.params.id;
+
+    // Validate status
+    const validStatuses = ['pending', 'accepted', 'completed', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    // Get the order
+    const orderRef = db.collection('orders').doc(orderId);
+    const orderSnap = await orderRef.get();
+
+    if (!orderSnap.exists) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const order = orderSnap.data() as Order;
+
+    // Verify vendor ownership
+    if (order.customerId !== req.user!.uid) {
+      return res.status(403).json({ error: 'Unauthorized - This order belongs to another customer' });
+    }
+
+    // Validate status transitions
+    const validTransitions: Record<OrderStatus, OrderStatus[]> = {
+      pending: ['cancelled'] as OrderStatus[],
+      accepted: ['cancelled'] as OrderStatus[],
+      completed: [] as OrderStatus[],
+      cancelled: ['cancelled'] as OrderStatus[]
+    };
+
+    if (!validTransitions[order.status].includes(status)) {
+      return res.status(400).json({
+        error: 'Invalid status transition',
+        message: `Cannot transition from ${order.status} to ${status}`
+      });
+    }
+
+    // Update order status
+    await orderRef.update({
       status,
-      updatedAt: new Date().toISOString()
+      customerComment: order.customerComment ? order.customerComment + `\nOrder status changed to ${status} by customer`
+        : `Order status changed to ${status} by customer`,
+      updatedAt: new Date(),
+      archived: true
     });
 
-    const doc = await docRef.get();
-    res.json({
-      id: doc.id,
-      ...doc.data()
-    } as Order);
+    res.json({ message: 'Order status updated successfully' });
   } catch (error) {
     console.error('Error updating order status:', error);
     res.status(500).json({ error: 'Failed to update order status' });
+  }
+});
+
+// Update order comment
+router.put('/:id/comment', requireRole(['customer', 'b2b-customer']), async (req: AuthenticatedRequest & { body: { comment: string } }, res) => {
+  try {
+    const { comment } = req.body;
+    const orderRef = db.collection('orders').doc(req.params.id);
+    const orderSnap = await orderRef.get();
+    if (!orderSnap.exists) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    const order = orderSnap.data() as Order;
+    if (order.customerId !== req.user!.uid) {
+      return res.status(403).json({ error: 'Unauthorized - This order belongs to another customer' });
+    }
+    await orderRef.update({
+      customerComment: order.customerComment ? order.customerComment + `\n${comment}` : comment,
+      updatedAt: new Date().toISOString()
+    });
+
+    
+    res.json({
+      id: orderSnap.id,
+      ...orderSnap.data()
+    } as Order);
+  } catch (error) {
+    console.error('Error updating order comment:', error);
+    res.status(500).json({ error: 'Failed to update order comment' });
   }
 });
 

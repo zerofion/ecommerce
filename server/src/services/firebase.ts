@@ -54,15 +54,24 @@ export interface OrderItem {
   vendorId: string;
 }
 
+export type OrderStatus = 'pending' | 'accepted' | 'completed' | 'cancelled';
+
+export type UpdateOrderStatusRequest = {
+  status: OrderStatus;
+};
+
 export interface Order {
   id: string;
   customerId: string;
   vendorId: string;
   products: OrderItem[];
   total: number;
-  status: 'pending' | 'delivered' | 'cancelled';
+  status: OrderStatus;
   createdAt: string;
   updatedAt?: string;
+  archived?: boolean;
+  customerComment?: string;
+  vendorComment?: string;
 }
 
 // Helper functions

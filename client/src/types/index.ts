@@ -1,4 +1,29 @@
-import { User } from "../context/types";
+import { ClientRole, User } from "../context/types";
+
+export type OrderStatus = 'pending' | 'accepted' | 'completed' | 'cancelled';
+
+export interface OrderItem {
+  productId: string;
+  name: string;
+  quantity: number;
+  price: number;
+  vendorId: string;
+}
+
+export interface Order {
+  id: string;
+  customerId: string;
+  role: ClientRole;
+  vendorId: string;
+  products: OrderItem[];
+  total: number;
+  status: 'pending' | 'accepted' | 'completed' | 'cancelled';
+  createdAt: string;
+  updatedAt: string;
+  vendorComment?: string;
+  customerComment?: string;
+  archived?: boolean;
+}
 
 export interface Product {
   id: string;
@@ -17,25 +42,6 @@ export interface Product {
   createdAt: string;
   updatedAt?: string;
   tenantId: string;
-}
-
-export interface OrderItem {
-  productId: string;
-  name: string;
-  quantity: number;
-  price: number;
-  vendorId: string;
-}
-
-export interface Order {
-  id: string;
-  customerId: string;
-  vendorId: string;
-  products: OrderItem[];
-  total: number;
-  status: 'pending' | 'delivered' | 'cancelled';
-  createdAt: string;
-  updatedAt?: string;
 }
 
 export const categories = [

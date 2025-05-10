@@ -1,18 +1,23 @@
-import { Box, Heading, Container, Button, VStack, HStack, Text, Card, CardHeader, CardBody, CardFooter, Icon } from '@chakra-ui/react';
+import { Box, Heading, Container, Button, VStack, HStack, Text, Card, CardHeader, CardBody, CardFooter, Icon, useToast, Input, Flex } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { API_URL } from '../services/auth';
-import { Order } from '../types';
+import { Order, OrderStatus } from '../types';
 import { useAuth } from '../hooks/useAuthHook';
-import { FaStreetView, FaTruck, FaMoneyBillWave } from 'react-icons/fa';
+import { FaTruck, FaMoneyBillWave, FaCheck, FaTimes, FaCheckCircle } from 'react-icons/fa';
 
 interface OrderCardProps {
   order: Order;
+  handleStatusUpdate: (order: Order, status: OrderStatus) => void;
+  handleCommentUpdate: (order: Order, comment: string) => void;
 }
 
-const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
+const OrderCard: React.FC<OrderCardProps> = ({ order, handleStatusUpdate, handleCommentUpdate }) => {
+  const [comment, setComment] = useState(order.vendorComment || '');
+  const [isEditing, setIsEditing] = useState(false);
   const statusColors = {
     pending: 'yellow.500',
-    delivered: 'green.500',
+    accepted: 'blue.500',
+    completed: 'green.500',
     cancelled: 'red.500'
   };
 
@@ -33,7 +38,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
               Order #{order.id}
             </Text>
             <Text fontSize={{ base: 'xs', md: 'sm' }} color="gray.600">
-              {new Date(order.createdAt).toLocaleDateString()}
+              {new Date(order.createdAt).toLocaleDateString() + ' ' + new Date(order.createdAt).toLocaleTimeString()}
             </Text>
           </VStack>
           <Text
@@ -51,6 +56,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
       </CardHeader>
 
       <CardBody p={{ base: 2, md: 3 }}>
+        <Text fontSize="sm" fontWeight="bold" mb={2}>Ordered by {order.role}</Text>
         <VStack spacing={3} align="stretch">
           <HStack
             justify="space-between"
@@ -79,8 +85,9 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
             <VStack spacing={2}>
               <HStack w="full" justify="space-between" align="center" wrap="wrap" gap={2}>
                 <Text fontSize="sm" fontWeight="bold">Name</Text>
-                <Text fontSize="sm" fontWeight="bold">Quantity</Text>
                 <Text fontSize="sm" fontWeight="bold">Price</Text>
+                <Text fontSize="sm" fontWeight="bold">Quantity</Text>
+                <Text fontSize="sm" fontWeight="bold">Total</Text>
               </HStack>
               {order.products.map((product, index) => (
                 <HStack
@@ -96,11 +103,51 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
                     {product.name}
                   </Text>
                   <Text fontSize="sm">
+                    ₹{product.price}
+                  </Text>
+                  <Text fontSize="sm">
+                    x{product.quantity}
+                  </Text>
+                  <Text fontSize="sm">
                     ₹{product.price * product.quantity}
                   </Text>
                 </HStack>
               ))}
             </VStack>
+          </Box>
+
+          {order.customerComment && (
+            <Box mt={4}>
+              <Text fontSize="sm" color="gray.600" mb={2}>Customer Comment</Text>
+              <Text color="gray.600" mb={2}>{order.customerComment}</Text>
+            </Box>
+          )}
+
+          <Box mt={4}>
+            <Text fontSize="sm" color="gray.600" mb={2}>Vendor Comment</Text>
+            {isEditing ? (
+              <Input
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Add a comment..."
+                mb={2}
+              />
+            ) : (
+              <Text color="gray.600" mb={2}>{order.vendorComment || 'No comment added'}</Text>
+            )}
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                if (isEditing) {
+                  handleCommentUpdate(order, comment);
+                }
+                setIsEditing(!isEditing);
+              }}
+            >
+              {isEditing ? 'Save Comment' : 'Add Comment'}
+            </Button>
           </Box>
         </VStack>
       </CardBody>
@@ -112,24 +159,42 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
           wrap="wrap"
           gap={2}
         >
-          <Button
-            size="sm"
-            leftIcon={<Icon as={FaStreetView} boxSize={4} />}
-            onClick={() => window.open(`/orders/${order.id}`)}
-          >
-            View Details
-          </Button>
-          {order.status === 'pending' && (
-            <Button
-              size="sm"
-              colorScheme="red"
-              onClick={() => {
-                // Add cancel order logic here
-              }}
-            >
-              Cancel Order
-            </Button>
-          )}
+          <HStack spacing={2}>
+            {((order.status === 'pending' || order.status === 'cancelled') && !order.archived) && (
+              <>
+                <Button
+                  size="sm"
+                  leftIcon={<Icon as={FaCheck} boxSize={4} />}
+                  colorScheme="blue"
+                  onClick={() => handleStatusUpdate(order, 'accepted')}
+                >
+                  Accept Order
+                </Button>
+              </>
+            )}
+            {order.status !== 'cancelled' && order.status !== 'completed' && (
+              <Button
+                size="sm"
+                leftIcon={<Icon as={FaTimes} boxSize={4} />}
+                colorScheme="red"
+                onClick={() => handleStatusUpdate(order, 'cancelled')}
+              >
+                Cancel Order
+              </Button>
+            )}
+            {order.status === 'accepted' && (
+              <Button
+                size="sm"
+                leftIcon={<Icon as={FaCheckCircle} boxSize={4} />}
+                colorScheme="green"
+                onClick={() => {
+                  handleStatusUpdate(order, 'completed');
+                }}
+              >
+                Mark as Completed
+              </Button>
+            )}
+          </HStack>
         </HStack>
       </CardFooter>
     </Card>
@@ -139,6 +204,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
 export const Orders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const { authSession } = useAuth();
+  const toast = useToast();
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -157,13 +223,94 @@ export const Orders = () => {
     fetchOrders();
   }, [authSession]);
 
+  function handleStatusUpdate(order: Order, status: OrderStatus) {
+    fetch(`${API_URL}/api/vendor/orders/${order.id}/status`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${authSession?.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Failed to update order status');
+        }
+        toast({
+          title: 'Success',
+          description: 'Order status updated successfully',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+          position: 'top-right'
+        });
+        const updatedOrders = orders.map((o) => (o.id === order.id ? { ...o, status } : o));
+        setOrders(updatedOrders);
+      })
+      .catch((error) => {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to update order status',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+          position: 'top-right'
+        });
+      });
+  }
+
+  function handleCommentUpdate(order: Order, comment: string) {
+    fetch(`${API_URL}/api/vendor/orders/${order.id}/comment`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${authSession?.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ comment }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Failed to update order comment');
+        }
+        toast({
+          title: 'Success',
+          description: 'Comment updated successfully',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+          position: 'top-right'
+        });
+        const updatedOrders = orders.map((o) =>
+          o.id === order.id ? { ...o, vendorComment: comment } : o
+        );
+        setOrders(updatedOrders);
+      })
+      .catch((error) => {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to update order comment',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+          position: 'top-right'
+        });
+      });
+  }
+
+
   return (
     <Container maxW="container.xl" mt={16}>
       <Heading mb={8}>Orders</Heading>
       <VStack spacing={6}>
-        {orders.map((order) => (
-          <OrderCard key={order.id} order={order} />
-        ))}
+        <Flex
+          flexWrap="wrap"
+          gap={6}
+        >
+          {orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+            .map((order) => (
+              <OrderCard key={order.id} order={order} handleStatusUpdate={handleStatusUpdate} handleCommentUpdate={handleCommentUpdate} />
+            ))}
+        </Flex>
       </VStack>
     </Container>
   );
