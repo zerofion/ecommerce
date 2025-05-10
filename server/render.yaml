@@ -3,11 +3,11 @@ services:
     name: ordering-app-server
     env: node
     buildCommand: |
-      cd /opt/render/project/src/server
+      cd server
       yarn install
       yarn build
     startCommand: |
-      cd /opt/render/project/src/server
+      cd server
       yarn start
     envVars:
       - key: NODE_ENV

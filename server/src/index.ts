@@ -23,6 +23,7 @@ app.use('/api/vendor/orders', vendorOrdersRouter);
 
 // Error handling middleware
 app.use(errorHandler);
+console.log('Current working directory:', process.cwd());
 
 // Start server
 const PORT = config.port;
