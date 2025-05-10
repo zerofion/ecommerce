@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: ordering-app-server
+    env: node
+    buildCommand: yarn build
+    startCommand: yarn start
+    envVars:
+      - key: NODE_ENV
+        value: production
+    healthCheckPath: /api/health
+    plan: free

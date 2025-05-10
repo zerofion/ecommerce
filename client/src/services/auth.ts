@@ -173,7 +173,7 @@ export const handleRedirectResult = async () => {
   try {
     const pendingResult = await getRedirectResult(auth);
     if (pendingResult) {
-      const credential = GoogleAuthProvider.credentialFromResult(pendingResult);
+      GoogleAuthProvider.credentialFromResult(pendingResult);
       const user = pendingResult.user;
       const idToken = await user.getIdToken();
       const email = user.email || '';

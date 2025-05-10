@@ -23,14 +23,6 @@ interface ShoppingSessionActions {
   placeOrder: () => Promise<void>;
 }
 
-interface OrderItem {
-  productId: string;
-  name: string;
-  quantity: number;
-  price: number;
-  vendorId: string;
-}
-
 interface ShoppingSessionContextType {
   state: ShoppingSessionState;
   actions: ShoppingSessionActions;

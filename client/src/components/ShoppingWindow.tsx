@@ -1,5 +1,4 @@
-import { Box, Flex, Heading, Text, Button, Select } from '@chakra-ui/react';
-import { FaShoppingCart } from 'react-icons/fa';
+import { Box, Flex, Heading, Text, Button } from '@chakra-ui/react';
 import { ProductList } from './products/ProductList';
 import { Cart } from './cart/Cart';
 import { useShoppingSession } from '../contexts/ShoppingSession';

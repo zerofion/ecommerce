@@ -26,10 +26,11 @@ export const Products = () => {
     b2bMrpPerQuantity: 0,
     paidCostPerQuantity: 0,
     allowLoose: false,
-    minQuantity: 1,
-    createdAt: new Date().toISOString()
+    minQuantity: 0,
+    createdAt: new Date().toISOString(),
+    tenantId: ''
   });
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  // const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   // Initialize mock data when component mounts
@@ -100,11 +101,11 @@ export const Products = () => {
 
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedImage(e.target.files[0]);
-    }
-  };
+  // const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   if (e.target.files && e.target.files[0]) {
+  //     setSelectedImage(e.target.files[0]);
+  //   }
+  // };
 
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,9 +151,10 @@ export const Products = () => {
         paidCostPerQuantity: 0,
         allowLoose: false,
         minQuantity: 1,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        tenantId: ''
       });
-      setSelectedImage(null);
+      // setSelectedImage(null);
       toast({
         title: "Success",
         description: "Product created successfully",
@@ -210,9 +212,10 @@ export const Products = () => {
         paidCostPerQuantity: 0,
         allowLoose: false,
         minQuantity: 1,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        tenantId: ''
       });
-      setSelectedImage(null);
+      // setSelectedImage(null);
       setEditingProduct(null);
       toast({
         title: "Success",
@@ -376,7 +379,7 @@ export const Products = () => {
                 <FormLabel>Image</FormLabel>
                 <Input
                   type="file"
-                  onChange={handleImageChange}
+                  // onChange={handleImageChange}
                   accept="image/*"
                 />
               </FormControl>

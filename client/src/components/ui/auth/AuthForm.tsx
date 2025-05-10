@@ -69,12 +69,7 @@ export default function AuthForm() {
     const handleGoogleSignUp = async () => {
         try {
             setIsLoading(true);
-            const response = await signUpWithGoogle(role);
-            if (response.userExists === '1') {
-                setIsLoading(false);
-                navigate('/auth/login?ue=1');
-                return;
-            }
+            await signUpWithGoogle(role);
             navigate('/auth/login?ujc=1');
         } catch (error: any) {
             handleError(error, navigate);

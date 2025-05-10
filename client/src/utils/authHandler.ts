@@ -1,14 +1,7 @@
-import { getAuth, getRedirectResult } from 'firebase/auth';
+import { getAuth, getRedirectResult, GoogleAuthProvider } from 'firebase/auth';
 import axios from 'axios';
 import { ClientRole } from '../context/types';
 import { API_URL } from '../config';
-
-interface User {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-  photoURL: string | null;
-}
 
 interface AuthState {
   token: string | null;
@@ -29,7 +22,7 @@ export const handleAuthRedirect = async (): Promise<void> => {
     if (pendingResult) {
       // Get the user and credential from the pending result
       const user = pendingResult.user;
-      const credential = pendingResult.credential;
+      const credential = GoogleAuthProvider.credentialFromResult(pendingResult);
       const accessToken = credential?.accessToken;
 
       if (!accessToken) {
@@ -78,7 +71,7 @@ export const handleAuthRedirect = async (): Promise<void> => {
           detail: verifiedAuthState
         }));
       } catch (error: unknown) {
-        if (error instanceof Error && error.response?.status === 404) {
+        if (error instanceof Error && error.message.includes('404')) {
           try {
             // Create new user if not found
             await axios.post(`${API_URL}/api/auth/signup`, {
