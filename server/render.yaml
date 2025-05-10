@@ -2,8 +2,13 @@ services:
   - type: web
     name: ordering-app-server
     env: node
-    buildCommand: yarn build
-    startCommand: yarn start
+    buildCommand: |
+      cd /opt/render/project/src/server
+      yarn install
+      yarn build
+    startCommand: |
+      cd /opt/render/project/src/server
+      yarn start
     envVars:
       - key: NODE_ENV
         value: production
