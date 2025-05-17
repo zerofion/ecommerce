@@ -26,11 +26,11 @@ export const Products = () => {
     b2bPricePerQuantity: 0,
     paidCostPerQuantity: 0,
     allowLoose: false,
-    minQuantity: 0,
+    minQuantity: 1,
     createdAt: new Date().toISOString(),
     tenantId: ''
   });
-  // const [selectedImage, setSelectedImage] = useState<File | null>(null);
+
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   // Initialize mock data when component mounts
@@ -102,11 +102,7 @@ export const Products = () => {
 
   };
 
-  // const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   if (e.target.files && e.target.files[0]) {
-  //     setSelectedImage(e.target.files[0]);
-  //   }
-  // };
+
 
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,7 +116,6 @@ export const Products = () => {
       });
       return;
     }
-
 
     try {
       const response = await fetch(`${API_URL}/api/vendor/products/create`, {
@@ -155,7 +150,6 @@ export const Products = () => {
         createdAt: new Date().toISOString(),
         tenantId: ''
       });
-      // setSelectedImage(null);
       toast({
         title: "Success",
         description: "Product created successfully",
@@ -377,11 +371,12 @@ export const Products = () => {
               </HStack>
 
               <FormControl>
-                <FormLabel>Image</FormLabel>
+                <FormLabel>Image URL</FormLabel>
                 <Input
-                  type="file"
-                  // onChange={handleImageChange}
-                  accept="image/*"
+                  name="imageUrl"
+                  value={newProduct.imageUrl}
+                  onChange={handleInputChange}
+                  placeholder="Enter image URL"
                 />
               </FormControl>
 
