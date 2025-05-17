@@ -1,4 +1,4 @@
-import { getAuth, getRedirectResult, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, getRedirectResult } from 'firebase/auth';
 import axios from 'axios';
 import { ClientRole } from '../context/types';
 import { API_URL } from '../config';
@@ -22,23 +22,23 @@ export const handleAuthRedirect = async (): Promise<void> => {
     if (pendingResult) {
       // Get the user and credential from the pending result
       const user = pendingResult.user;
-      const credential = GoogleAuthProvider.credentialFromResult(pendingResult);
-      const accessToken = credential?.accessToken;
+      const idToken = await user.getIdToken();
 
-      if (!accessToken) {
-        console.error('No access token found in credential');
+      if (!idToken) {
         return;
       }
 
       // Dispatch initial auth state with basic user info
       const initialAuthState: AuthState = {
-        token: accessToken,
+        token: idToken,
         user: {
           email: user.email || '',
           role: 'customer' as ClientRole,
           name: user.displayName || ''
         }
       };
+
+      localStorage.setItem('auth', JSON.stringify(initialAuthState)); 
 
       window.dispatchEvent(new CustomEvent('authStateChanged', {
         detail: initialAuthState
@@ -51,7 +51,7 @@ export const handleAuthRedirect = async (): Promise<void> => {
       try {
         // First try to verify the token
         const response = await axios.post(`${API_URL}/api/auth/verify`, {
-          idToken: accessToken,
+          idToken: idToken,
           role,
           email: user.email,
           name: user.displayName
@@ -59,7 +59,7 @@ export const handleAuthRedirect = async (): Promise<void> => {
 
         // Update auth state with verified user info
         const verifiedAuthState: AuthState = {
-          token: accessToken,
+          token: idToken,
           user: {
             email: response.data.user.email,
             role: response.data.user.role as ClientRole,
@@ -75,7 +75,7 @@ export const handleAuthRedirect = async (): Promise<void> => {
           try {
             // Create new user if not found
             await axios.post(`${API_URL}/api/auth/signup`, {
-              idToken: accessToken,
+              idToken: idToken,
               user: {
                 email: user.email,
                 role,
@@ -85,7 +85,7 @@ export const handleAuthRedirect = async (): Promise<void> => {
 
             // Update auth state with new user info
             const newAuthState: AuthState = {
-              token: accessToken,
+              token: idToken,
               user: {
                 email: user.email || '',
                 role,
@@ -111,8 +111,6 @@ export const handleAuthRedirect = async (): Promise<void> => {
           }
         }
       }
-    } else {
-      console.log('No pending redirect result found');
     }
   } catch (error: unknown) {
     if (error instanceof Error) {

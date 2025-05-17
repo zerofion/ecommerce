@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, UserCredential, sendEmailVerification, getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getApps } from 'firebase/app';
 import { ClientRole, User, Session } from '../context/types';
 import { UserRoleExistsError } from '../exceptions/UserRoleExists';
 import { UserNotFoundError } from '../exceptions/UserNotFound';
@@ -19,8 +20,11 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+const apps = getApps();
+if (apps.length === 0) {
+  initializeApp(firebaseConfig);
+}
+export const auth = getAuth();
 
 interface AuthResponse {
   token: string;
@@ -39,7 +43,6 @@ export const signUp = async (email: string, password: string, role: ClientRole) 
     } catch (error: any) {
       if (error.code === 'auth/email-already-in-use') {
         userCredential = await signInWithEmailAndPassword(auth, email, password);
-        console.log('Email already in use');
       }
     }
     const firebaseUser = userCredential!.user;

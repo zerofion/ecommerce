@@ -1,5 +1,8 @@
-import { Box, Heading, VStack, HStack, Button, Container, FormControl, FormLabel, Input, Select, useToast, Table, Thead, Tbody, Tr, Th, Td, IconButton, Spinner, Image, Flex, Badge } from '@chakra-ui/react';
-import { FaEdit, FaTrash, FaFilter } from 'react-icons/fa';
+import {
+  Box, Heading, VStack, HStack, Button, Container, FormControl,
+  FormLabel, Input, Select, useToast, Table, Thead, Tbody, Tr, Th, Td, IconButton, Spinner, Image, Flex
+} from '@chakra-ui/react';
+import { FaEdit, FaTrash } from 'react-icons/fa';
 import { useState, useEffect, useCallback } from 'react';
 import { API_URL } from '../services/auth';
 import { categories, Product } from '../types';

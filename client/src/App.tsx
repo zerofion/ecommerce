@@ -13,6 +13,7 @@ import { ClientRole } from './context/types';
 import { CustomerHome } from './pages/CustomerHome';
 import { VendorHome } from './pages/VendorHome';
 import { CustomerOrders } from './pages/CustomerOrders';
+import ErrorBoundary from './components/ErrorBoundary';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -85,6 +86,10 @@ const App: React.FC = () => {
           token: (event as CustomEvent).detail.token,
           user: (event as CustomEvent).detail.user
         });
+        localStorage.setItem('auth', JSON.stringify({
+          token: (event as CustomEvent).detail.token,
+          user: (event as CustomEvent).detail.user
+        }));
       }
     };
 
@@ -92,67 +97,71 @@ const App: React.FC = () => {
     return () => window.removeEventListener('authStateChanged', handleAuthState as EventListener);
   }, [setAuthSession]);
 
+
   return (
     <ChakraProvider theme={theme}>
-      <Router>
+      <ErrorBoundary>
+        <Router>
           <Box bg={theme.colors.gray[50]} minH="100vh" minW="100vw" pt={{ base: '180px', md: '0px' }}>
             {authSession && <Header />}
             <Box mx="auto" bgGradient="linear(to-b, blue.50, white)" p={4} m={0} w="100vw" className='w-full' pt={{ base: '64px', md: '0px' }}>
-            <Routes>
-              <Route path="/auth/:mode" element={
-                authSession ? (
-                  <Navigate to="/" replace />
-                ) : (
-                  <Auth />
-                )
-              } />
-              <Route
-                path="/"
-                element={
+              <Routes>
+                <Route path='/auth/google' element={<Products />} />
+                <Route path="/auth/:mode" element={
                   authSession ? (
-                    <Layout>
-                      {authSession!.user!.role === ClientRole.CUSTOMER || authSession!.user!.role === ClientRole.B2B_CUSTOMER ? <CustomerHome /> : <VendorHome />}
-                    </Layout>
+                    <Navigate to="/" replace />
                   ) : (
-                    <Navigate to="/auth/login" replace />
+                    <Auth />
                   )
-                }
-              />
-              {authSession?.user!.role === ClientRole.VENDOR ? <Route
-                path="/products"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
-                      <Products />
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              /> : <Route
-                path="/products"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
-                      <Navigate to="/" replace />
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />}
-              <Route
-                path="/orders"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
-                      {authSession?.user!.role === ClientRole.CUSTOMER || authSession?.user!.role === ClientRole.B2B_CUSTOMER ? <CustomerOrders /> : <Orders />}
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="*" element={<Navigate to="/auth/login" replace />} />
-            </Routes>
+                } />
+                <Route
+                  path="/"
+                  element={
+                    authSession ? (
+                      <Layout>
+                        {authSession!.user!.role === ClientRole.CUSTOMER || authSession!.user!.role === ClientRole.B2B_CUSTOMER ? <CustomerHome /> : <VendorHome />}
+                      </Layout>
+                    ) : (
+                      <Navigate to="/auth/login" replace />
+                    )
+                  }
+                />
+                {authSession?.user!.role === ClientRole.VENDOR ? <Route
+                  path="/products"
+                  element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <Products />
+                      </Layout>
+                    </ProtectedRoute>
+                  }
+                /> : <Route
+                  path="/products"
+                  element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <Navigate to="/" replace />
+                      </Layout>
+                    </ProtectedRoute>
+                  }
+                />}
+                <Route
+                  path="/orders"
+                  element={
+                    <ProtectedRoute>
+                      <Layout>
+                        {authSession?.user!.role === ClientRole.CUSTOMER || authSession?.user!.role === ClientRole.B2B_CUSTOMER ? <CustomerOrders /> : <Orders />}
+                      </Layout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="*" element={<Navigate to="/auth/login" replace />} />
+              </Routes>
+            </Box>
           </Box>
-        </Box>
 
-      </Router>
+        </Router>
+      </ErrorBoundary>
     </ChakraProvider>
   );
 };
