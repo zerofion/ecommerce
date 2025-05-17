@@ -1,6 +1,6 @@
 import { Box, VStack, Heading, HStack, Link, Text, useToast } from '@chakra-ui/react';
 import { FaLock, FaUser } from 'react-icons/fa';
-import { ClientRole } from '../../../context/types';
+import { ClientRole, Session } from '../../../context/types';
 import FormInputField from '../FormComponents/FormInputField';
 import FormSubmissionButton from '../FormComponents/FormSubmissionButton';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -14,6 +14,8 @@ import { toDisplayCase } from '../../../utils/stringUtils';
 
 export default function AuthForm() {
 
+    const { setAuthSession, setIsLoading, isLoading, authSession } = useAuth();
+
     const toast = useToast();
     const navigate = useNavigate();
     const { mode } = useParams<{ mode: string }>();
@@ -25,9 +27,9 @@ export default function AuthForm() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [role, setRole] = useState<ClientRole>(ClientRole.CUSTOMER);
     const [passwordError, setPasswordError] = useState('');
-    const { setAuthSession, setIsLoading, isLoading } = useAuth();
+    const role = authSession?.user?.role || ClientRole.CUSTOMER;
+
 
     useEffect(() => {
         const navigateTo = handleToasts({
@@ -130,7 +132,19 @@ export default function AuthForm() {
                     <VStack spacing={6} align="stretch">
                         <FormSelectInputField
                             value={role}
-                            onChange={(e) => setRole(e.target.value as ClientRole)}
+                            onChange={(e) => {
+                                const newAuthSession: Session = {
+                                    ...authSession,
+                                    token: authSession?.token || null,
+                                    user: {
+                                        ...authSession?.user,
+                                        role: e.target.value as ClientRole,
+                                        email: authSession?.user?.email || null,
+                                        name: authSession?.user?.name || null
+                                    }
+                                };
+                                setAuthSession(newAuthSession);
+                            }}
                             options={Object.values(ClientRole).map(role => ({
                                 label: toDisplayCase(role),
                                 value: role

@@ -1,7 +1,8 @@
 import { getAuth, getRedirectResult } from 'firebase/auth';
 import axios from 'axios';
-import { ClientRole } from '../context/types';
+import { ClientRole, Session } from '../context/types';
 import { API_URL } from '../config';
+import { handleLoginError } from '../services/auth';
 
 interface AuthState {
   token: string | null;
@@ -12,13 +13,16 @@ interface AuthState {
   };
 }
 
-export const handleAuthRedirect = async (): Promise<void> => {
+export const handleAuthRedirect = async (authSession: Session | null,
+  setAuthSession: React.Dispatch<React.SetStateAction<Session | null>>,
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>): Promise<void> => {
   try {
     const auth = getAuth();
-    
+    setIsLoading(true);
+
     // First check if we have a pending redirect result
     const pendingResult = await getRedirectResult(auth);
-
+ 
     if (pendingResult) {
       // Get the user and credential from the pending result
       const user = pendingResult.user;
@@ -28,88 +32,27 @@ export const handleAuthRedirect = async (): Promise<void> => {
         return;
       }
 
-      // Dispatch initial auth state with basic user info
-      const initialAuthState: AuthState = {
-        token: idToken,
-        user: {
-          email: user.email || '',
-          role: 'customer' as ClientRole,
-          name: user.displayName || ''
-        }
-      };
-
-      localStorage.setItem('auth', JSON.stringify(initialAuthState)); 
-
-      window.dispatchEvent(new CustomEvent('authStateChanged', {
-        detail: initialAuthState
-      }));
-
-      // Check if we have a role query parameter
-      const urlParams = new URLSearchParams(window.location.search);
-      const role = urlParams.get('role') as ClientRole || 'customer' as ClientRole;
-
       try {
         // First try to verify the token
         const response = await axios.post(`${API_URL}/api/auth/verify`, {
           idToken: idToken,
-          role,
+          role: authSession?.user?.role || 'customer',
           email: user.email,
           name: user.displayName
         });
 
-        // Update auth state with verified user info
-        const verifiedAuthState: AuthState = {
+        const authState: AuthState = {
           token: idToken,
           user: {
             email: response.data.user.email,
-            role: response.data.user.role as ClientRole,
+            role: response.data.user.role,
             name: response.data.user.name
           }
         };
-
-        window.dispatchEvent(new CustomEvent('authStateChanged', {
-          detail: verifiedAuthState
-        }));
+        localStorage.setItem('auth', JSON.stringify(authState));
+        setAuthSession(authState);
       } catch (error: unknown) {
-        if (error instanceof Error && error.message.includes('404')) {
-          try {
-            // Create new user if not found
-            await axios.post(`${API_URL}/api/auth/signup`, {
-              idToken: idToken,
-              user: {
-                email: user.email,
-                role,
-                name: user.displayName
-              }
-            });
-
-            // Update auth state with new user info
-            const newAuthState: AuthState = {
-              token: idToken,
-              user: {
-                email: user.email || '',
-                role,
-                name: user.displayName || ''
-              }
-            };
-
-            window.dispatchEvent(new CustomEvent('authStateChanged', {
-              detail: newAuthState
-            }));
-          } catch (error: unknown) {
-            if (error instanceof Error) {
-              console.error('Error during signup:', error.message);
-            } else {
-              console.error('Unknown error during signup');
-            }
-          }
-        } else {
-          if (error instanceof Error) {
-            console.error('Error during verification:', error.message);
-          } else {
-            console.error('Unknown error during verification');
-          }
-        }
+        handleLoginError(error);
       }
     }
   } catch (error: unknown) {

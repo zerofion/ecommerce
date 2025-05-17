@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, UserCredential, sendEmailVerification, getAuth, onAuthStateChanged } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect, UserCredential, sendEmailVerification, getAuth, onAuthStateChanged } from 'firebase/auth';
 import { getApps } from 'firebase/app';
 import { ClientRole, User, Session } from '../context/types';
 import { UserRoleExistsError } from '../exceptions/UserRoleExists';
@@ -156,42 +156,9 @@ export const login = async (email: string, password: string, role: ClientRole): 
       roleExists: '1'
     };
   } catch (error: any) {
-    // Handle specific Firebase error codes
-    if (error.code === 'auth/wrong-password') {
-      throw new Error('Incorrect password. Please try again.');
-    }
-
-    if (error.response?.status === 404 || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-      throw new UserNotFoundError();
-    }
-    if (error.response?.status === 403) {
-      throw new UserRoleNotFoundError();
-    }
+    handleLoginError(error);
     throw error;
-  }
-};
-
-
-export const handleRedirectResult = async () => {
-  try {
-    const pendingResult = await getRedirectResult(auth);
-    if (pendingResult) {
-      GoogleAuthProvider.credentialFromResult(pendingResult);
-      const user = pendingResult.user;
-      const idToken = await user.getIdToken();
-      const email = user.email || '';
-      const name = user.displayName || '';
-      return {
-        idToken,
-        user,
-        email,
-        name
-      };
-    }
-    return null;
-  } catch (error: any) {
-    console.error('Error handling redirect result:', error);
-    return null;
+    
   }
 };
 
@@ -206,7 +173,6 @@ export const signInWithGoogle = async (role: ClientRole): Promise<AuthResponse> 
 
     // Check if we're on mobile device
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    console.log('isMobile', isMobile);
     if (isMobile) {
       // For mobile, we just start the redirect flow
       await signInWithRedirect(auth, provider);
@@ -242,13 +208,7 @@ export const signInWithGoogle = async (role: ClientRole): Promise<AuthResponse> 
       };
     }
   } catch (error: any) {
-    if (error.response?.status === 404) {
-      throw new UserNotFoundError();
-    }
-    if (error.response?.status === 403) {
-      throw new UserRoleNotFoundError();
-    }
-    console.error('Google Auth Error:', error);
+    handleLoginError(error);
     throw error;
   }
 };
@@ -283,6 +243,22 @@ export const refreshSession = async (setAuthSession: React.Dispatch<React.SetSta
   } catch (error: any) {
     throw new Error(error.message || 'Failed to refresh session');
   }
+}
+
+export const handleLoginError = (error: any) => {
+  if (error.response?.status === 403) {
+    throw new UserRoleNotFoundError();
+  }
+
+  if (error.code === 'auth/wrong-password') {
+    throw new Error('Incorrect password. Please try again.');
+  }
+
+  if (error.response?.status === 404 || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+    throw new UserNotFoundError();
+  }
+  
+  console.error('Google Auth Error:', error);
 }
 
 export const logout = async () => {

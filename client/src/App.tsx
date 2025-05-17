@@ -71,31 +71,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 };
 
 const App: React.FC = () => {
-  const { authSession, setAuthSession } = useAuth();
+  const { authSession, setAuthSession, setIsLoading } = useAuth();
 
   useEffect(() => {
     // Call handleAuthRedirect on initial load
-    handleAuthRedirect();
+    handleAuthRedirect(authSession, setAuthSession, setIsLoading);
   }, []);
-
-  useEffect(() => {
-    // Listen for auth state changes from the auth handler
-    const handleAuthState = (event: Event) => {
-      if ((event as CustomEvent).detail) {
-        setAuthSession({
-          token: (event as CustomEvent).detail.token,
-          user: (event as CustomEvent).detail.user
-        });
-        localStorage.setItem('auth', JSON.stringify({
-          token: (event as CustomEvent).detail.token,
-          user: (event as CustomEvent).detail.user
-        }));
-      }
-    };
-
-    window.addEventListener('authStateChanged', handleAuthState as EventListener);
-    return () => window.removeEventListener('authStateChanged', handleAuthState as EventListener);
-  }, [setAuthSession]);
 
 
   return (
@@ -103,12 +84,11 @@ const App: React.FC = () => {
       <ErrorBoundary>
         <Router>
           <Box bg={theme.colors.gray[50]} minH="100vh" minW="100vw" pt={{ base: '180px', md: '0px' }}>
-            {authSession && <Header />}
+            {authSession?.token && <Header />}
             <Box mx="auto" bgGradient="linear(to-b, blue.50, white)" p={4} m={0} w="100vw" className='w-full' pt={{ base: '64px', md: '0px' }}>
-              <Routes>
-                <Route path='/auth/google' element={<Products />} />
+              <Routes>                
                 <Route path="/auth/:mode" element={
-                  authSession ? (
+                  authSession?.token ? (
                     <Navigate to="/" replace />
                   ) : (
                     <Auth />
@@ -117,7 +97,7 @@ const App: React.FC = () => {
                 <Route
                   path="/"
                   element={
-                    authSession ? (
+                    authSession?.token ? (
                       <Layout>
                         {authSession!.user!.role === ClientRole.CUSTOMER || authSession!.user!.role === ClientRole.B2B_CUSTOMER ? <CustomerHome /> : <VendorHome />}
                       </Layout>

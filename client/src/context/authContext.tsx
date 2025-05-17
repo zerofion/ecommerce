@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { API_URL, refreshSession } from '../services/auth';
+import { API_URL, logout } from '../services/auth';
 import axios from 'axios';
 import { ClientRole, Session } from './types';
 
@@ -27,14 +27,21 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const persistedAuth = localStorage.getItem('auth');
-  const initialAuth = persistedAuth ? JSON.parse(persistedAuth) : null;
+  const initialAuth = persistedAuth ? JSON.parse(persistedAuth) : {
+    idToken: null,
+    user: {
+      name: null,
+      email: null,
+      role: ClientRole.CUSTOMER
+    }
+  };
 
   const [authSession, setAuthSession] = useState<Session | null>(initialAuth || null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (authSession) {
+    if (authSession?.token) {
       const verifyToken = async () => {
         try {
           await axios.post(`${API_URL}/api/auth/verify`, {
@@ -51,12 +58,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           }))
         } catch (error: any) {
           if (error.response?.status === 401) {
-            refreshSession(setAuthSession);
+            logout();
           }
         }
       };
       verifyToken();
-
+      setIsLoading(false);
+    } else {
+      localStorage.setItem('auth', JSON.stringify({
+        token: null,
+        user: {
+          name: null,
+          email: null,
+          role: authSession?.user?.role || ClientRole.CUSTOMER
+        }
+      }))
+      setIsLoading(false);
     }
   }, [authSession]);
 
