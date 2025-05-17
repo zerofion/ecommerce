@@ -206,7 +206,7 @@ export const signInWithGoogle = async (role: ClientRole): Promise<AuthResponse> 
 
     // Check if we're on mobile device
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
+    console.log('isMobile', isMobile);
     if (isMobile) {
       // For mobile, we just start the redirect flow
       await signInWithRedirect(auth, provider);
