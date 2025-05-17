@@ -101,6 +101,11 @@ export function handleError(error: any, navigate: NavigateFunction) {
         navigate('/auth/login?ue=1&re=1');
         return;
     }
+
+    if (error.code === 'auth/popup-closed-by-user') {
+        navigate('/auth/login');
+        return;
+    }
     console.error('Auth Error:', error);
     navigate('/auth/login');
 }
