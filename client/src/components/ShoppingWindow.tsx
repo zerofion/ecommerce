@@ -1,10 +1,12 @@
-import { Box, Flex, Heading, Text, Button } from '@chakra-ui/react';
+import { Box, Flex, Heading, Text, Button, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton } from '@chakra-ui/react';
 import { ProductList } from './products/ProductList';
 import { Cart } from './cart/Cart';
 import { useShoppingSession } from '../contexts/ShoppingSession';
+import { useNavigate } from 'react-router-dom';
 
 export const ShoppingWindow: React.FC = () => {
   const { state, actions } = useShoppingSession();
+  const navigate = useNavigate();
 
   return (
     <Box
@@ -16,8 +18,8 @@ export const ShoppingWindow: React.FC = () => {
       mt={{ base: '64px', md: '80px' }}
       pt={{ base: '64px', md: '80px' }}
     >
-      <Box 
-        textAlign="center" 
+      <Box
+        textAlign="center"
         mb={{ base: 4, md: 8 }}
         px={{ base: 2, md: 0 }}
       >
@@ -47,6 +49,7 @@ export const ShoppingWindow: React.FC = () => {
         wrap="wrap"
         gap={2}
       >
+
         <Button
           colorScheme={state.showCart ? "red" : "blue"}
           onClick={() => actions.setShowCart(!state.showCart)}
@@ -55,6 +58,16 @@ export const ShoppingWindow: React.FC = () => {
           transition="all 0.2s"
         >
           {state.showCart ? 'Hide Cart' : 'View Cart'}
+        </Button>
+        <Button
+          display={{ base: 'block', md: 'none' }}
+          colorScheme="blue"
+          size="lg"
+          _hover={{ transform: 'scale(1.02)' }}
+          transition="all 0.2s"
+          onClick={() => navigate('/orders')}
+        >
+          Orders
         </Button>
       </Flex>
 
@@ -78,24 +91,22 @@ export const ShoppingWindow: React.FC = () => {
           <Box flex="1">
             <ProductList />
           </Box>
-          <Box
-            w="300px"
-            display={state.showCart ? 'block' : 'none'}
-            boxShadow="lg"
-            borderRadius="lg"
-            p={6}
-            bg="white"
-            position="fixed"
-            right="24"
-            top="16"
-            zIndex={10}
-            maxH="calc(100vh - 32px)"
-            overflowY="auto"
-          >
-            <Cart />
-          </Box>
         </Flex>
       </Box>
+      <Modal
+        isOpen={state.showCart}
+        onClose={() => actions.setShowCart(false)}
+        size="xl"
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Shopping Cart</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody p={6}>
+            <Cart />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };

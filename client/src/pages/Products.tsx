@@ -23,7 +23,7 @@ export const Products = () => {
     stock: 0,
     imageUrl: '',
     mrpPerQuantity: 0,
-    b2bMrpPerQuantity: 0,
+    b2bPricePerQuantity: 0,
     paidCostPerQuantity: 0,
     allowLoose: false,
     minQuantity: 0,
@@ -80,9 +80,10 @@ export const Products = () => {
               name === 'price' ? parseFloat(value) :
                 name === 'stock' ? parseInt(value) :
                   name === 'mrpPerQuantity' ? parseFloat(value) :
-                    name === 'b2bMrpPerQuantity' ? parseFloat(value) :
+                    name === 'b2bPricePerQuantity' ? parseFloat(value) :
                       name === 'paidCostPerQuantity' ? parseFloat(value) :
-                        value
+                        name === 'imageUrl' ? value :
+                          value
         };
       })
     }
@@ -94,7 +95,7 @@ export const Products = () => {
           name === 'price' ? parseFloat(value) :
             name === 'stock' ? parseInt(value) :
               name === 'mrpPerQuantity' ? parseFloat(value) :
-                name === 'b2bMrpPerQuantity' ? parseFloat(value) :
+                name === 'b2bPricePerQuantity' ? parseFloat(value) :
                   name === 'paidCostPerQuantity' ? parseFloat(value) :
                     value
     }));
@@ -109,7 +110,7 @@ export const Products = () => {
 
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProduct.name || !newProduct.price || !newProduct.b2bMrpPerQuantity) {
+    if (!newProduct.name || !newProduct.price || !newProduct.b2bPricePerQuantity) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -147,7 +148,7 @@ export const Products = () => {
         stock: 0,
         imageUrl: '',
         mrpPerQuantity: 0,
-        b2bMrpPerQuantity: 0,
+        b2bPricePerQuantity: 0,
         paidCostPerQuantity: 0,
         allowLoose: false,
         minQuantity: 1,
@@ -208,7 +209,7 @@ export const Products = () => {
         stock: 0,
         imageUrl: '',
         mrpPerQuantity: 0,
-        b2bMrpPerQuantity: 0,
+        b2bPricePerQuantity: 0,
         paidCostPerQuantity: 0,
         allowLoose: false,
         minQuantity: 1,
@@ -349,9 +350,9 @@ export const Products = () => {
                 <FormControl isRequired>
                   <FormLabel>B2B Price</FormLabel>
                   <Input
-                    name="b2bMrpPerQuantity"
+                    name="b2bPricePerQuantity"
                     type="number"
-                    value={newProduct.b2bMrpPerQuantity}
+                    value={newProduct.b2bPricePerQuantity}
                     onChange={handleInputChange}
                     placeholder="Enter B2B Price"
                   />
@@ -446,7 +447,7 @@ export const Products = () => {
                       <Td>{product.description}</Td>
                       <Td>{product.category}</Td>
                       <Td>{product.price}</Td>
-                      <Td>{product.b2bMrpPerQuantity}</Td>
+                      <Td>{product.b2bPricePerQuantity}</Td>
                       <Td>{product.allowLoose ? 'Yes' : 'No'}</Td>
                       <Td>
                         <HStack spacing={2}>

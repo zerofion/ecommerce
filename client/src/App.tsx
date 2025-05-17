@@ -99,7 +99,13 @@ const App: React.FC = () => {
             {authSession && <Header />}
             <Box mx="auto" bgGradient="linear(to-b, blue.50, white)" p={4} m={0} w="100vw" className='w-full' pt={{ base: '64px', md: '0px' }}>
             <Routes>
-              <Route path="/auth/:mode" element={<Auth />} />
+              <Route path="/auth/:mode" element={
+                authSession ? (
+                  <Navigate to="/" replace />
+                ) : (
+                  <Auth />
+                )
+              } />
               <Route
                 path="/"
                 element={
@@ -141,8 +147,6 @@ const App: React.FC = () => {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/login" element={<Auth />} />
-              <Route path="/signup" element={<Auth />} />
               <Route path="*" element={<Navigate to="/auth/login" replace />} />
             </Routes>
           </Box>

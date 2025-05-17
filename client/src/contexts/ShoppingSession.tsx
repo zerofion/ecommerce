@@ -118,7 +118,7 @@ export const ShoppingSessionProvider: React.FC<{ children: React.ReactNode }> = 
             productId: item.product.id,
             name: item.product.name,
             quantity: item.quantity,
-            price: authSession?.user?.role === ClientRole.B2B_CUSTOMER ? item.product.b2bMrpPerQuantity : item.product.price,
+            price: authSession?.user?.role === ClientRole.B2B_CUSTOMER ? item.product.b2bPricePerQuantity : item.product.price,
             vendorId: item.product.tenantId
           }))
         }),

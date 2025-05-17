@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { API_URL } from '../services/auth';
 import { Order, OrderStatus } from '../types';
 import { useAuth } from '../hooks/useAuthHook';
-import { FaTruck, FaMoneyBillWave, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaTruck, FaMoneyBillWave, FaCheck, FaTimes, FaHome } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 interface OrderCardProps {
   order: Order;
@@ -190,6 +191,7 @@ export const CustomerOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const { authSession } = useAuth();
   const toast = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -284,7 +286,22 @@ export const CustomerOrders = () => {
 
   return (
     <Container maxW="container.xl" mt={16}>
-      <Heading mb={8}>Orders</Heading>
+      <Flex
+        justify="space-between"
+        align="center"
+        mb={8}
+      >
+        <Heading>Orders</Heading>
+        <Button
+          size="lg"
+          display={{ base: 'block', md: 'none' }}
+          colorScheme="blue"
+          leftIcon={<Icon as={FaHome} boxSize={4} />}
+          onClick={() => navigate('/')}
+        >
+          Home
+        </Button>
+      </Flex>
       <VStack spacing={6}>
         <Flex flexWrap="wrap" gap={4}>
           {orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((order) => (

@@ -68,9 +68,9 @@ export const Cart: React.FC = () => {
           {state.cartItems.map((item) => (
             <HStack key={item.product.id} justify="space-between" align="center">
               <Box>
-                <Text fontWeight="bold">{item.product.name}</Text>
+                <Text fontWeight="bold">{item.product.name + ' ' + item.product.description.slice(0, 10)}</Text>
                 <Text fontSize="sm" color="gray.600">
-                  ₹{authSession?.user?.role === ClientRole.CUSTOMER ? item.product.price : item.product.b2bMrpPerQuantity}
+                  ₹{authSession?.user?.role === ClientRole.CUSTOMER ? item.product.price : item.product.b2bPricePerQuantity}
                 </Text>
               </Box>
               <HStack>
@@ -100,12 +100,12 @@ export const Cart: React.FC = () => {
           <Box mt={4}>
             <Text fontWeight="bold" mb={2}>
               Total: ₹{state.cartItems.reduce((sum: number, item) => sum + ((
-                authSession?.user?.role === ClientRole.CUSTOMER ? item.product.price : item.product.b2bMrpPerQuantity
+                authSession?.user?.role === ClientRole.CUSTOMER ? item.product.price : item.product.b2bPricePerQuantity
               ) * item.quantity), 0)}
             </Text>
             <Text fontWeight="bold" color="green.500">
               ₹{state.cartItems.reduce((sum: number, item) => sum + ((
-                authSession?.user?.role === ClientRole.CUSTOMER ? item.product.price : item.product.b2bMrpPerQuantity
+                authSession?.user?.role === ClientRole.CUSTOMER ? item.product.price : item.product.b2bPricePerQuantity
               ) * item.quantity), 0).toFixed(2)}
             </Text>
             <Button colorScheme="blue" onClick={handlePlaceOrder}>
