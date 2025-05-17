@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { Box, Heading, Text, HStack, Button, Grid, GridItem, Select, Image, Spinner, useToast } from '@chakra-ui/react';
+import { Box, Heading, Text, HStack, Button, Grid, GridItem, Select, Image, Spinner, useToast, Badge } from '@chakra-ui/react';
 import { FaFilter, FaShoppingCart } from 'react-icons/fa';
 import { categories, Product } from '../../types';
 import { useShoppingSession } from '../../contexts/ShoppingSession';
@@ -29,7 +29,7 @@ export const ProductList: React.FC = () => {
       });
     }
     actions.addToCart(product);
-  }, [actions, state.cartItems]);
+  }, [actions, state.cartItems, toast]);
 
   const filteredProducts = state.selectedCategory === 'All' || state.selectedCategory === ''
     ? state.products
@@ -62,13 +62,36 @@ export const ProductList: React.FC = () => {
           {filteredProducts.map((product) => (
             <GridItem key={product.id}>
               <Box p={4} borderWidth={1} borderRadius="lg">
-                <Image
-                  src={product.imageUrl}
-                  alt={product.name}
-                  mb={3}
-                  boxSize="200px"
-                  objectFit="contain"
-                />
+                <Box position="relative">
+                  <Image
+                    src={product.imageUrl}
+                    alt={product.name}
+                    boxSize="200px"
+                    objectFit="contain"
+                    position="relative"
+                  />
+                  <Box
+                    position="absolute"
+                    top="10px"
+                    right="10px"
+                    zIndex="1"
+                  >
+                    <Badge
+                      variant="solid"
+                      colorScheme="blue"
+                      borderRadius="full"
+                      px="2"
+                      py="1"
+                      fontSize="xs"
+                      display="flex"
+                      alignItems="center"
+                      flexDirection="column"
+                    >
+                      <FaFilter size={12} />
+                      <Box ml="1">{product.category}</Box>
+                    </Badge>
+                  </Box>
+                </Box>
                 <Heading size="sm" mb={1}>{product.name}</Heading>
                 <Text color="gray.600" mb={2}>{product.description}</Text>
                 <HStack justify="space-between" align="center">

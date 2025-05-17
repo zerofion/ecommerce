@@ -1,5 +1,5 @@
-import { Box, Heading, VStack, HStack, Button, Container, FormControl, FormLabel, Input, Select, useToast, Table, Thead, Tbody, Tr, Th, Td, IconButton, Spinner, Image, Flex } from '@chakra-ui/react';
-import { FaEdit, FaTrash } from 'react-icons/fa';
+import { Box, Heading, VStack, HStack, Button, Container, FormControl, FormLabel, Input, Select, useToast, Table, Thead, Tbody, Tr, Th, Td, IconButton, Spinner, Image, Flex, Badge } from '@chakra-ui/react';
+import { FaEdit, FaTrash, FaFilter } from 'react-icons/fa';
 import { useState, useEffect, useCallback } from 'react';
 import { API_URL } from '../services/auth';
 import { categories, Product } from '../types';
@@ -106,10 +106,22 @@ export const Products = () => {
 
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProduct.name || !newProduct.price || !newProduct.b2bPricePerQuantity) {
+    const requiredFields = {
+      name: newProduct.name,
+      category: newProduct.category,
+      price: newProduct.price,
+      b2bPricePerQuantity: newProduct.b2bPricePerQuantity,
+      imageUrl: newProduct.imageUrl
+    };
+
+    const missingFields = Object.entries(requiredFields)
+      .filter(([_, value]) => !value)
+      .map(([field]) => field);
+
+    if (missingFields.length > 0) {
       toast({
         title: "Error",
-        description: "Please fill in all required fields",
+        description: `Please fill in the following required fields: ${missingFields.join(', ')}`,
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -171,6 +183,29 @@ export const Products = () => {
 
   const handleEditProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!editingProduct) return;
+
+    const requiredFields = {
+      name: editingProduct.name,
+      category: editingProduct.category,
+      price: editingProduct.price,
+      b2bPricePerQuantity: editingProduct.b2bPricePerQuantity,
+    };
+
+    const missingFields = Object.entries(requiredFields)
+      .filter(([_, value]) => !value)
+      .map(([field]) => field);
+
+    if (missingFields.length > 0) {
+      toast({
+        title: "Error",
+        description: `Please fill in the following required fields: ${missingFields.join(', ')}`,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
 
     try {
       const response = await fetch(`${API_URL}/api/vendor/products/update`, {
