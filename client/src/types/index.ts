@@ -5,6 +5,7 @@ export type OrderStatus = 'pending' | 'accepted' | 'completed' | 'cancelled';
 export interface OrderItem {
   productId: string;
   name: string;
+  description: string;
   quantity: number;
   price: number;
   vendorId: string;

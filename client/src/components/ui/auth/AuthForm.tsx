@@ -193,9 +193,11 @@ export default function AuthForm() {
                             isLoading={isLoading}
                             isDisabled={mode === 'signup' && !!passwordError} />
 
-                        <GoogleButton mode={mode ? mode : 'login'}
-                            handleGoogleSignIn={handleGoogleSignIn}
-                            handleGoogleSignUp={handleGoogleSignUp} />
+                        {isLoading ? <FormSubmissionButton mode={mode ? mode : 'login'}
+                            isLoading={isLoading}
+                            isDisabled={mode === 'signup' && !!passwordError} /> : <GoogleButton mode={mode ? mode : 'login'}
+                                handleGoogleSignIn={handleGoogleSignIn}
+                                handleGoogleSignUp={handleGoogleSignUp} />}
 
                         <HStack justify="center">
                             <Text color="gray.600">

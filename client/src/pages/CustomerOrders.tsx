@@ -304,7 +304,7 @@ export const CustomerOrders = () => {
       </Flex>
       <VStack spacing={6}>
         <Flex flexWrap="wrap" gap={4}>
-          {orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((order) => (
+          {orders?.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((order) => (
             <>
               <OrderCard key={order.id} order={order} handleStatusUpdate={handleStatusUpdate} handleCommentUpdate={handleCommentUpdate} />
             </>

@@ -80,6 +80,7 @@ router.post('/', requireRole(['customer', 'b2b-customer']), async (req: Authenti
           products: items.map(item => ({
             productId: item.productId,
             name: item.name,
+            description: item.description,
             quantity: item.quantity,
             price: item.price
           })),

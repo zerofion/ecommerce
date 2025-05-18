@@ -2,6 +2,8 @@ import React, { createContext, useState, useEffect } from 'react';
 import { API_URL, logout } from '../services/auth';
 import axios from 'axios';
 import { ClientRole, Session } from './types';
+import { handleAuthRedirect } from '../utils/authHandler';
+import { getAuth, getRedirectResult } from '@firebase/auth';
 
 export interface AuthContextType {
   authSession: Session | null;
@@ -39,8 +41,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [authSession, setAuthSession] = useState<Session | null>(initialAuth || null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-  useEffect(() => {
+  function authChangeHandler() {
     if (authSession?.token) {
       const verifyToken = async () => {
         try {
@@ -64,7 +67,43 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       };
       verifyToken();
       setIsLoading(false);
-    } else {
+    } else if (isMobile) {
+      localStorage.setItem('auth', JSON.stringify({
+        token: null,
+        user: {
+          name: null,
+          email: null,
+          role: authSession?.user?.role || ClientRole.CUSTOMER
+        }
+      }))
+      console.log('Mobile device detected');
+      console.log("authSession");
+      const handleRedirect = async () => {
+        const auth = getAuth();
+        const result = await getRedirectResult(auth);
+        console.log("result");
+        console.log(result);
+        console.log("isLoading");
+        console.log(isLoading);
+        if (result) {
+          const updatedAuthSession = await handleAuthRedirect(result, authSession);
+          setAuthSession(updatedAuthSession);
+          localStorage.setItem('auth', JSON.stringify({
+            token: updatedAuthSession.token,
+            user: {
+              name: updatedAuthSession.user?.name || null,
+              email: updatedAuthSession.user?.email || null,
+              role: updatedAuthSession.user?.role || ClientRole.CUSTOMER
+            }
+          }))
+          setIsLoading(false);
+        } else {
+          setIsLoading(false);
+        }
+      }
+      handleRedirect();
+    }
+    else {
       localStorage.setItem('auth', JSON.stringify({
         token: null,
         user: {
@@ -75,6 +114,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }))
       setIsLoading(false);
     }
+  }
+
+  useEffect(() => {
+    authChangeHandler();
   }, [authSession]);
 
   return (

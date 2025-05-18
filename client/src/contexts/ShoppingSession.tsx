@@ -117,6 +117,7 @@ export const ShoppingSessionProvider: React.FC<{ children: React.ReactNode }> = 
           items: state.cartItems.map(item => ({
             productId: item.product.id,
             name: item.product.name,
+            description: item.product.description,
             quantity: item.quantity,
             price: authSession?.user?.role === ClientRole.B2B_CUSTOMER ? item.product.b2bPricePerQuantity : item.product.price,
             vendorId: item.product.tenantId

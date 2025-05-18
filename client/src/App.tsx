@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ChakraProvider, Box, Flex, useDisclosure, Spinner } from '@chakra-ui/react';
-import { handleAuthRedirect } from './utils/authHandler';
 import { useAuth } from './hooks/useAuthHook';
 import { theme } from './theme';
 import { Header } from './components/layout/Header';
@@ -71,13 +70,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 };
 
 const App: React.FC = () => {
-  const { authSession, setAuthSession, setIsLoading } = useAuth();
-
-  useEffect(() => {
-    // Call handleAuthRedirect on initial load
-    handleAuthRedirect(authSession, setAuthSession, setIsLoading);
-  }, []);
-
+  const { authSession } = useAuth()
 
   return (
     <ChakraProvider theme={theme}>
@@ -86,7 +79,7 @@ const App: React.FC = () => {
           <Box bg={theme.colors.gray[50]} minH="100vh" minW="100vw" pt={{ base: '180px', md: '0px' }}>
             {authSession?.token && <Header />}
             <Box mx="auto" bgGradient="linear(to-b, blue.50, white)" p={4} m={0} w="100vw" className='w-full' pt={{ base: '64px', md: '0px' }}>
-              <Routes>                
+              <Routes>
                 <Route path="/auth/:mode" element={
                   authSession?.token ? (
                     <Navigate to="/" replace />
@@ -142,8 +135,7 @@ const App: React.FC = () => {
 
         </Router>
       </ErrorBoundary>
-    </ChakraProvider>
-  );
+    </ChakraProvider>)
 };
 
 export default App;

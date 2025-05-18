@@ -101,7 +101,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, handleStatusUpdate, handle
                   w="full"
                 >
                   <Text fontSize="sm" noOfLines={1}>
-                    {product.name}
+                    {product.name} {product.description?.slice(0, 10)}
                   </Text>
                   <Text fontSize="sm">
                     ₹{product.price}
@@ -323,7 +323,7 @@ export const Orders = () => {
           flexWrap="wrap"
           gap={6}
         >
-          {orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          {orders?.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
             .map((order) => (
               <OrderCard key={order.id} order={order} handleStatusUpdate={handleStatusUpdate} handleCommentUpdate={handleCommentUpdate} />
             ))}
