@@ -1,9 +1,8 @@
 import { CreateToastFnReturn } from "@chakra-ui/react";
-import { EmailNotVerifiedError } from '../exceptions/EmailNotVerifiedError';
 import { UserRoleExistsError } from '../exceptions/UserRoleExists';
 import { UserNotFoundError } from '../exceptions/UserNotFound';
-import { UserRoleNotFoundError } from '../exceptions/UserRoleNotFoundError';
-import { NavigateFunction } from "react-router-dom";
+import { UserRoleNotFoundError } from "../exceptions/UserRoleNotFoundError";
+import { GoogleAuthProvider } from "@firebase/auth";
 
 export interface authToastFlags {
     userExists: string | null;
@@ -16,6 +15,16 @@ export interface authToastArgs {
     flags: authToastFlags;
     mode: string | undefined;
     toast: CreateToastFnReturn;
+}
+
+export function getGoogleProvider(): GoogleAuthProvider {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({
+      prompt: 'select_account'
+    });
+    provider.addScope('profile');
+    provider.addScope('email');
+    return provider;
 }
 
 export function handleToasts({ flags, mode, toast }: authToastArgs): string {
@@ -82,30 +91,70 @@ export function handleToasts({ flags, mode, toast }: authToastArgs): string {
     return '';
 }
 
-
-export function handleError(error: any, navigate: NavigateFunction) {
-    if (error instanceof EmailNotVerifiedError) {
-        navigate('/auth/login?env=1');
-        return;
+export function handleSignUpError(error: any) {
+    console.error('SignUp Error:', error);
+    if (error.response?.status === 409) {
+        throw new UserRoleExistsError();
     }
-    if (error instanceof UserNotFoundError) {
-        navigate('/auth/signup?ue=0');
-        return;
+    if (error.response?.status === 404 || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+        throw new UserNotFoundError();
     }
-    if (error instanceof UserRoleNotFoundError) {
-        navigate('/auth/signup?re=0');
-        return;
+    if (!error.response?.data?.message) {
+        if (error.response?.data?.error) {
+            error.message = error.response.data.error;
+        } else {
+            error.message = 'Something went wrong';
+        }
     }
-
-    if (error instanceof UserRoleExistsError) {
-        navigate('/auth/login?ue=1&re=1');
-        return;
+    if(error.code && error.code === 'auth/popup-closed-by-user'){
+        error.message = 'Popup closed by user';
     }
-
-    if (error.code === 'auth/popup-closed-by-user') {
-        navigate('/auth/login');
-        return;
-    }
-    console.error('Auth Error:', error);
-    navigate('/auth/login');
+    throw error;
 }
+
+export const handleLoginError = (error: any) => {
+    if (error.response?.status === 403) {
+        throw new UserRoleNotFoundError();
+    }
+
+    if (error.code === 'auth/wrong-password') {
+        throw new Error('Incorrect password. Please try again.');
+    }
+
+    if (error.response?.status === 404 || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+        throw new UserNotFoundError();
+    }
+    console.error('Google Auth Error:', error);
+}
+
+// export const refreshSession = async (setAuthSession: React.Dispatch<React.SetStateAction<Session | null>>) => {
+//     try {
+//       onAuthStateChanged(auth, async (user) => {
+//         if (user) {
+//           const tokenResult = await user.getIdTokenResult(true);
+//           const idToken = tokenResult.token;
+  
+//           setAuthSession({
+//             token: idToken,
+//             user: {
+//               name: user.displayName || null,
+//               email: user.email || null,
+//               role: tokenResult.claims.role as ClientRole || ClientRole.CUSTOMER
+//             }
+//           })
+//           localStorage.setItem('auth', JSON.stringify({
+//             token: idToken,
+//             user: {
+//               name: user.displayName || null,
+//               email: user.email || null,
+//               role: tokenResult.claims.role as ClientRole || ClientRole.CUSTOMER
+//             }
+//           }))
+//         } else {
+//           console.log("No user is signed in.");
+//         }
+//       });
+//     } catch (error: any) {
+//       throw new Error(error.message || 'Failed to refresh session');
+//     }
+//   }

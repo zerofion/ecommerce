@@ -1,5 +1,6 @@
 import admin from 'firebase-admin';
 import { config } from '../config';
+import { ClientRole } from '../types';
 
 // Initialize Firebase Admin
 let app: admin.app.App;
@@ -89,7 +90,7 @@ export const getUserRole = async (uid: string): Promise<Role> => {
 export const isVendor = async (uid: string): Promise<boolean> => {
   try {
     const role = await getUserRole(uid);
-    return role === 'vendor';
+    return role === ClientRole.VENDOR;
   } catch (error) {
     console.error('Failed to check vendor status:', error);
     throw error;

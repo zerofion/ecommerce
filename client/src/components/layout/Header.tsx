@@ -4,7 +4,7 @@ import { useAuth } from '../../hooks/useAuthHook';
 import { API_URL, logout } from '../../services/auth';
 import FormSelectInputField from '../ui/FormComponents/FormSelectInputField';
 import { useEffect, useState } from 'react';
-import { ClientRole } from '../../context/types';
+import { ClientRole, initialAuthTemplate } from '../../context/types';
 import axios from 'axios';
 import { toDisplayCase } from '../../utils/stringUtils';
 
@@ -16,7 +16,7 @@ export const Header = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      setAuthSession(null);
+      setAuthSession(initialAuthTemplate);
       toast({
         title: 'Success',
         description: 'Logged out successfully',

@@ -5,16 +5,17 @@ import FormInputField from '../FormComponents/FormInputField';
 import FormSubmissionButton from '../FormComponents/FormSubmissionButton';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { handleError, handleToasts } from '../../../utils/authUtils';
+import { handleToasts } from '../../../utils/authUtils';
 import { login, signInWithGoogle, signUp, signUpWithGoogle } from '../../../services/auth';
 import { useAuth } from '../../../hooks/useAuthHook';
 import FormSelectInputField from '../FormComponents/FormSelectInputField';
 import GoogleButton from './GoogleButton';
 import { toDisplayCase } from '../../../utils/stringUtils';
+import { handleError } from './utils';
 
 export default function AuthForm() {
 
-    const { setAuthSession, setIsLoading, isLoading, authSession } = useAuth();
+    const { setAuthSession, setIsLoading, isLoading, authSession, setRole } = useAuth();
 
     const toast = useToast();
     const navigate = useNavigate();
@@ -29,7 +30,6 @@ export default function AuthForm() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [passwordError, setPasswordError] = useState('');
     const role = authSession?.user?.role || ClientRole.CUSTOMER;
-
 
     useEffect(() => {
         const navigateTo = handleToasts({
@@ -56,10 +56,7 @@ export default function AuthForm() {
         setIsLoading(true);
         try {
             const response = await login(email, password, role);
-            setAuthSession({
-                user: response.user,
-                token: response.token
-            });
+            setAuthSession(response.session);
             navigate('/');
         } catch (error: any) {
             handleError(error, navigate);
@@ -74,6 +71,14 @@ export default function AuthForm() {
             await signUpWithGoogle(role);
             navigate('/auth/login?ujc=1');
         } catch (error: any) {
+            toast({
+                title: 'Error',
+                description: error.message,
+                status: 'error',
+                duration: 3000,
+                isClosable: true,
+                position: 'top-right'
+            });
             handleError(error, navigate);
         } finally {
             setIsLoading(false);
@@ -84,10 +89,7 @@ export default function AuthForm() {
         try {
             setIsLoading(true);
             const response = await signInWithGoogle(role);
-            setAuthSession({
-                user: response.user,
-                token: response.token
-            });
+            setAuthSession(response.session);
             navigate('/');
         } catch (error: any) {
             handleError(error, navigate);
@@ -109,6 +111,18 @@ export default function AuthForm() {
             setPasswordError('');
         }
     };
+
+    const roles = Object.values(ClientRole).map(role => ({
+        label: toDisplayCase(role),
+        value: role
+    }))
+
+    if (window.location.href.includes('signup')) {
+        roles.splice(roles.findIndex(role => role.value === ClientRole.B2B_CUSTOMER), 1);
+        if (role === ClientRole.B2B_CUSTOMER) {
+            setRole(ClientRole.CUSTOMER);
+        }
+    }
 
     return (
         <Box
@@ -145,10 +159,7 @@ export default function AuthForm() {
                                 };
                                 setAuthSession(newAuthSession);
                             }}
-                            options={Object.values(ClientRole).map(role => ({
-                                label: toDisplayCase(role),
-                                value: role
-                            }))}
+                            options={roles}
                             isRequired={true}
                         />
 
@@ -199,6 +210,7 @@ export default function AuthForm() {
                                 handleGoogleSignIn={handleGoogleSignIn}
                                 handleGoogleSignUp={handleGoogleSignUp} />}
 
+
                         <HStack justify="center">
                             <Text color="gray.600">
                                 {mode === 'login' ? 'Don\'t have an account?' : 'Already have an account?'}
@@ -210,6 +222,11 @@ export default function AuthForm() {
                                 {mode === 'login' ? 'Create Account' : 'Login'}
                             </Link>
                         </HStack>
+                        {mode === 'signup' && (
+                            <Text color="gray.600">
+                                Please contact the admin for B2B account registration.
+                            </Text>
+                        )}
                     </VStack>
                 </form>
             </VStack>

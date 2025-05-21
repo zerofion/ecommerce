@@ -1,5 +1,6 @@
 import express from 'express';
 import { auth, db } from '../services/firebase';
+import { ClientRole } from '../types';
 
 interface UserProfile {
   email: string;
@@ -15,7 +16,7 @@ interface LoginRequest {
 }
 
 interface SignupRequest {
-  idToken: string;
+  token: string;
   user: {
     email: string;
     role: string;
@@ -28,10 +29,14 @@ const router = express.Router();
 // Signup route
 router.post('/signup', async (req, res) => {
   try {
-    const { idToken, user } = req.body as SignupRequest;
+    const { token, user } = req.body as SignupRequest;
+
+    if(user.role === ClientRole.B2B_CUSTOMER){
+      return res.status(400).json({ error: 'Please request b2b customer signup from admin' });
+    }
 
     // Verify ID token
-    const decodedToken = await auth.verifyIdToken(idToken);
+    const decodedToken = await auth.verifyIdToken(token);
     const uid = decodedToken.uid;
 
     const userDoc = await db.collection('users').doc(uid).get();
