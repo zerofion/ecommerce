@@ -7,8 +7,9 @@ import { signUpWithApp, verifyAuthSession } from '../utils/authApiUtils';
 import { getGoogleProvider, handleSignUpError } from '../utils/authUtils';
 import { isMobile } from '../utils/appUtils';
 import { firebaseConfig } from '../config';
+import { UserNotFoundError } from '../exceptions/UserNotFound';
 
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+export const API_URL = import.meta.env.VITE_API_URL;
 
 // Initialize Firebase
 const apps = getApps();
@@ -86,6 +87,11 @@ export const signUpWithGoogle = async (role?: ClientRole) => {
 export const login = async (email: string, password: string, role: ClientRole): Promise<AuthResponse> => {
   const userCredential = await signInWithEmailAndPassword(auth, email, password);
   const firebaseUser = userCredential.user;
+
+  if (!firebaseUser) {
+    throw new UserNotFoundError();
+  }
+
   const idToken = await firebaseUser.getIdToken();
   const isEmailVerified = await firebaseUser.emailVerified;
 

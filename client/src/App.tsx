@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ChakraProvider, Box, Flex, useDisclosure, Spinner } from '@chakra-ui/react';
 import { useAuth } from './hooks/useAuthHook';
 import { theme } from './theme';
@@ -75,65 +75,62 @@ const App: React.FC = () => {
   return (
     <ChakraProvider theme={theme}>
       <ErrorBoundary>
-        <Router>
-          <Box bg={theme.colors.gray[50]} minH="100vh" minW="100vw" pt={{ base: '180px', md: '0px' }}>
-            {authSession?.token && <Header />}
-            <Box mx="auto" bgGradient="linear(to-b, blue.50, white)" p={4} m={0} w="100vw" className='w-full' pt={{ base: '64px', md: '0px' }}>
-              <Routes>
-                <Route path="/auth/:mode" element={
+        <Box bg={theme.colors.gray[50]} minH="100vh" minW="100vw" pt={{ base: '180px', md: '0px' }}>
+          {authSession?.token && <Header />}
+          <Box mx="auto" bgGradient="linear(to-b, blue.50, white)" p={4} m={0} w="100vw" className='w-full' pt={{ base: '64px', md: '0px' }}>
+            <Routes>
+              <Route path="/auth/:mode" element={
+                authSession?.token ? (
+                  <Navigate to="/" replace />
+                ) : (
+                  <Auth />
+                )
+              } />
+              <Route
+                path="/"
+                element={
                   authSession?.token ? (
-                    <Navigate to="/" replace />
+                    <Layout>
+                      {authSession!.user!.role === ClientRole.CUSTOMER || authSession!.user!.role === ClientRole.B2B_CUSTOMER ? <CustomerHome /> : <VendorHome />}
+                    </Layout>
                   ) : (
-                    <Auth />
+                    <Navigate to="/auth/login" replace />
                   )
-                } />
-                <Route
-                  path="/"
-                  element={
-                    authSession?.token ? (
-                      <Layout>
-                        {authSession!.user!.role === ClientRole.CUSTOMER || authSession!.user!.role === ClientRole.B2B_CUSTOMER ? <CustomerHome /> : <VendorHome />}
-                      </Layout>
-                    ) : (
-                      <Navigate to="/auth/login" replace />
-                    )
-                  }
-                />
-                {authSession?.user!.role === ClientRole.VENDOR ? <Route
-                  path="/products"
-                  element={
-                    <ProtectedRoute>
-                      <Layout>
-                        <Products />
-                      </Layout>
-                    </ProtectedRoute>
-                  }
-                /> : <Route
-                  path="/products"
-                  element={
-                    <ProtectedRoute>
-                      <Layout>
-                        <Navigate to="/" replace />
-                      </Layout>
-                    </ProtectedRoute>
-                  }
-                />}
-                <Route
-                  path="/orders"
-                  element={
-                    <ProtectedRoute>
-                      <Layout>
-                        {authSession?.user!.role === ClientRole.CUSTOMER || authSession?.user!.role === ClientRole.B2B_CUSTOMER ? <CustomerOrders /> : <Orders />}
-                      </Layout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="*" element={<Navigate to="/auth/login" replace />} />
-              </Routes>
-            </Box>
+                }
+              />
+              {authSession?.user!.role === ClientRole.VENDOR ? <Route
+                path="/products"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Products />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              /> : <Route
+                path="/products"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Navigate to="/" replace />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />}
+              <Route
+                path="/orders"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {authSession?.user!.role === ClientRole.CUSTOMER || authSession?.user!.role === ClientRole.B2B_CUSTOMER ? <CustomerOrders /> : <Orders />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="*" element={<Navigate to="/auth/login" replace />} />
+            </Routes>
           </Box>
-
-        </Router>
+        </Box>
       </ErrorBoundary>
     </ChakraProvider>)
 };

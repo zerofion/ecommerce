@@ -3,9 +3,10 @@ import { AuthProviderProps, ClientRole, initialAuthTemplate, Session } from "./t
 import { useEffect } from "react";
 import { getAuth, getRedirectResult } from "@firebase/auth";
 import { AuthContext } from "./authContext";
-import { updateAuthSessionInLocalStorage, validateAuthSession } from "./authUtils";
+import { handleError, updateAuthSessionInLocalStorage, validateAuthSession } from "./authUtils";
 import { isMobile } from "../utils/appUtils";
 import { signUpWithApp } from "../utils/authApiUtils";
+import { useNavigate } from "react-router-dom";
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const persistedAuth = localStorage.getItem('auth');
@@ -13,6 +14,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [authSession, setAuthSession] = useState<Session>(persistedAuth ? JSON.parse(persistedAuth) : initialAuthTemplate);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   function setRole(role: ClientRole) {
     const updatedAuthSession = {
@@ -32,23 +34,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (result) {
       const user = result.user;
       const idToken = await user.getIdToken();
-
       if (localStorage.getItem('signUp') === 'true') {
         localStorage.removeItem('signUp');
-        await signUpWithApp({
-          token: idToken,
-          user: {
-            email: user.email || '',
-            role: authSession?.user?.role || ClientRole.CUSTOMER,
-            name: user.displayName || '',
-          }
-        });
+        try {
+          await signUpWithApp({
+            token: idToken,
+            user: {
+              email: user.email || '',
+              role: authSession?.user?.role || ClientRole.CUSTOMER,
+              name: user.displayName || '',
+            }
+          });
+          navigate('/auth/login?ujc=1');
+        } catch (error: any) {
+          setIsLoading(false);
+          console.error(error);
+          handleError(error, navigate);
+        }
       } else {
-        const updatedAuthSession = await validateAuthSession({
-          idToken: idToken,
-          role: authSession?.user?.role || ClientRole.CUSTOMER
-        });
-        setAuthSession(updatedAuthSession);
+        try {
+          const updatedAuthSession = await validateAuthSession({
+            idToken: idToken,
+            role: authSession?.user?.role || ClientRole.CUSTOMER
+          });
+          setAuthSession(updatedAuthSession);
+          navigate('/');
+        } catch (error: any) {
+          setIsLoading(false);
+          console.error(error);
+          handleError(error, navigate);
+        }
       }
       setIsLoading(false);
       return;

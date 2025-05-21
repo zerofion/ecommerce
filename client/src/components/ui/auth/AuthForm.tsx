@@ -11,7 +11,7 @@ import { useAuth } from '../../../hooks/useAuthHook';
 import FormSelectInputField from '../FormComponents/FormSelectInputField';
 import GoogleButton from './GoogleButton';
 import { toDisplayCase } from '../../../utils/stringUtils';
-import { handleError } from './utils';
+import { handleError } from '../../../context/authUtils';
 
 export default function AuthForm() {
 
