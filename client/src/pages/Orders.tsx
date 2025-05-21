@@ -21,6 +21,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, handleStatusUpdate, handle
     completed: 'green.500',
     cancelled: 'red.500'
   };
+  const total = order.products.reduce((acc, product) => acc + product.price * product.quantity, 0);
 
   return (
     <Card
@@ -68,7 +69,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, handleStatusUpdate, handle
             <HStack>
               <Icon as={FaMoneyBillWave} color="blue.500" boxSize={4} />
               <Text fontWeight="bold" fontSize={{ base: 'sm', md: 'md' }}>
-                ₹{order.total.toFixed(2)}
+                ₹{total.toFixed(2)}
               </Text>
             </HStack>
             <HStack>

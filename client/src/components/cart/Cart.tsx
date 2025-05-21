@@ -8,10 +8,13 @@ import { ClientRole } from '../../context/types';
 export const Cart: React.FC = () => {
   const { state, actions } = useShoppingSession();
   const { authSession } = useAuth();
-
+  const [isPlacingOrder, setIsPlacingOrder] = React.useState(false);
   const toast = useToast();
 
   const handlePlaceOrder = async () => {
+    if (isPlacingOrder) return; // Prevent multiple clicks
+    
+    setIsPlacingOrder(true);
     try {
       await actions.placeOrder();
       toast({
@@ -23,14 +26,17 @@ export const Cart: React.FC = () => {
         position: 'top-right'
       });
     } catch (error) {
+      console.error('Error placing order:', error);
       toast({
         title: 'Error',
-        description: 'Failed to place order',
+        description: 'Failed to place order. Please try again.',
         status: 'error',
         duration: 3000,
         isClosable: true,
         position: 'top-right'
       });
+    } finally {
+      setIsPlacingOrder(false);
     }
   };
 
@@ -108,7 +114,13 @@ export const Cart: React.FC = () => {
                 authSession?.user?.role === ClientRole.CUSTOMER ? item.product.price : item.product.b2bPricePerQuantity
               ) * item.quantity), 0).toFixed(2)}
             </Text>
-            <Button colorScheme="blue" onClick={handlePlaceOrder}>
+            <Button 
+              colorScheme="blue" 
+              onClick={handlePlaceOrder}
+              isLoading={isPlacingOrder}
+              loadingText="Placing Order..."
+              disabled={isPlacingOrder}
+            >
               Place Order
             </Button>
           </Box>

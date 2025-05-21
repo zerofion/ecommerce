@@ -89,7 +89,6 @@ router.post('/', requireRole(['customer', 'b2b-customer']), async (req: Authenti
           customerComment: '',
           vendorComment: '',
           role: req.user?.role,
-          total: items.reduce((acc, item) => acc + item.price * item.quantity, 0)
         });
 
         return {
